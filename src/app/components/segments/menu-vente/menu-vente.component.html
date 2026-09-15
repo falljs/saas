@@ -1,0 +1,149 @@
+<div class="vente-navigation sticky-top mb-2">
+    <div class="card shadow-sm">
+        <div class="card-body p-2">
+
+            <div class="vente-navigation-bar">
+
+                <!-- ========================= -->
+                <!-- RETOUR -->
+                <!-- ========================= -->
+                <button type="button" class="btn btn-outline-secondary btn-retour" (click)="goBack()"
+                    title="Retour à la page précédente">
+
+                    <i class="bi bi-arrow-left"></i>
+                    <span>Retour</span>
+                </button>
+
+
+                <!-- ========================= -->
+                <!-- NAVIGATION -->
+                <!-- ========================= -->
+                <div class="vente-tabs-wrapper">
+
+                    <ul class="nav nav-tabs vente-tabs mb-0" role="tablist">
+
+                        <!-- Créer -->
+                        <li class="nav-item" role="presentation" *ngIf="userService.checkPermissionExistence(
+                                firstRoleName + ' créer facture et devis Vente'
+                            )">
+
+                            <a routerLink="/vente" class="nav-link" [ngClass]="{
+                                    'active': router.url === '/vente'
+                                }" role="tab">
+
+                                <i class="bi bi-plus-lg me-1"></i>
+                                Créer
+                            </a>
+                        </li>
+
+
+                        <!-- Factures -->
+                        <li class="nav-item" role="presentation" *ngIf="userService.checkPermissionExistence(
+                                firstRoleName + ' voir facture Vente'
+                            )">
+
+                            <a routerLink="/ticket" class="nav-link" [ngClass]="{
+                                    'active': router.url === '/ticket'
+                                }" role="tab">
+
+                                <i class="bi bi-receipt me-1"></i>
+                                Factures
+                            </a>
+                        </li>
+
+
+                        <!-- Devis -->
+                        <li class="nav-item" role="presentation" *ngIf="userService.checkPermissionExistence(
+                                firstRoleName + ' voir devis Vente'
+                            )">
+
+                            <a routerLink="/devis" class="nav-link" [ngClass]="{
+                                    'active': router.url === '/devis'
+                                }" role="tab">
+
+                                <i class="bi bi-file-earmark-text me-1"></i>
+                                Devis
+                            </a>
+                        </li>
+
+
+                        <!-- Bons -->
+                        <li class="nav-item" role="presentation" *ngIf="userService.checkPermissionExistence(
+                                firstRoleName + ' voir bon Vente'
+                            )">
+
+                            <a routerLink="/bon" class="nav-link" [ngClass]="{
+                                    'active': router.url === '/bon'
+                                }" role="tab">
+
+                                <i class="bi bi-file-earmark-check me-1"></i>
+                                Bons
+                            </a>
+                        </li>
+
+
+                        <!-- Encaissement -->
+                        <li hidden class="nav-item" role="presentation" *ngIf="userService.checkPermissionExistence(
+                                firstRoleName + ' voir encaissement Vente'
+                            )">
+
+                            <a routerLink="/encaissement" class="nav-link" [ngClass]="{
+                                    'active': router.url === '/encaissement'
+                                }" role="tab">
+
+                                Encaissement
+                            </a>
+                        </li>
+
+                    </ul>
+
+                </div>
+
+
+                <!-- ========================= -->
+                <!-- ACTIONS -->
+                <!-- ========================= -->
+                <div class="vente-actions">
+
+                    <!-- Nouvelle facture -->
+                    <a *ngIf="
+            router.url === '/ticket' &&
+            userService.checkPermissionExistence(
+                firstRoleName + ' créer facture et devis Vente'
+            )
+        " routerLink="/vente" class="btn btn-success btn-action">
+                        <i class="bi bi-plus-lg me-1"></i>
+                        Nouvelle facture
+                    </a>
+
+
+                    <!-- Nouveau devis -->
+                    <a *ngIf="
+            router.url === '/devis' &&
+            userService.checkPermissionExistence(
+                firstRoleName + ' créer facture et devis Vente'
+            )
+        " routerLink="/vente" class="btn btn-success btn-action">
+                        <i class="bi bi-plus-lg me-1"></i>
+                        Nouveau devis
+                    </a>
+
+
+                    <!-- Nouveau bon -->
+                    <a *ngIf="
+            router.url === '/bon' &&
+            userService.checkPermissionExistence(
+                firstRoleName + ' créer bon Vente'
+            )
+        " routerLink="/bon-nouveau" class="btn btn-success btn-action">
+                        <i class="bi bi-plus-lg me-1"></i>
+                        Nouveau bon
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</div>

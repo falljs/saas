@@ -1,0 +1,477 @@
+<div class="card">
+
+  <div class="row g-0">
+
+    <div class="col-md-12">
+
+      <div class="card-body">
+
+        <form [formGroup]="formUpdate" (ngSubmit)="onUpdate()">
+
+          <h3 class="card-title mb-4">
+            Informations de l'entreprise
+          </h3>
+
+          <div class="row g-3">
+
+            <!-- ========================= -->
+            <!-- INFORMATIONS ENTREPRISE -->
+            <!-- ========================= -->
+
+            <div class="col-md-6">
+
+              <div class="card h-100">
+
+                <div class="card-header">
+                  <strong>Entreprise</strong>
+                </div>
+
+                <!-- ========================= -->
+                <!-- LOGO -->
+                <!-- ========================= -->
+
+                <div class="col-md-6">
+
+                  <div class="card h-100">
+
+                    <div class="card-header">
+                      <strong>Logo de l'entreprise</strong>
+                    </div>
+
+                    <div class="card-body text-center">
+
+                      <!-- Aperçu du logo -->
+                      <div class="mb-3">
+
+                        <img *ngIf="logoURL" [src]="logoURL" alt="Logo sélectionné" class="img-fluid rounded border"
+                          style="max-height: 180px; max-width: 250px; object-fit: contain;">
+
+                        <img *ngIf="!logoURL && setting?.logo" [src]="parametreService.urlLogo + setting.logo"
+                          alt="Logo actuel" class="img-fluid rounded border"
+                          style="max-height: 180px; max-width: 250px; object-fit: contain;">
+
+                        <div *ngIf="!logoURL && !setting?.logo" class="border rounded p-5 text-muted">
+                          Aucun logo
+                        </div>
+
+                      </div>
+
+                      <!-- Sélection du logo -->
+                      <input #fileInput id="file" type="file" class="form-control"
+                        accept="image/png,image/jpeg,image/jpg,image/webp" (change)="onSelectFile($event)">
+
+                      <small class="text-muted d-block mt-2">
+                        Formats acceptés : JPG, JPEG, PNG, WEBP
+                      </small>
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+                <div class="card-body">
+
+                  <div class="mb-3">
+                    <label class="form-label">
+                      Nom de l'entreprise
+                    </label>
+
+                    <input type="text" class="form-control" formControlName="entreprise">
+                  </div>
+
+                  <div class="mb-3">
+                    <label class="form-label">
+                      Description
+                    </label>
+
+                    <textarea class="form-control" rows="3" formControlName="description"
+                      placeholder="Ex : Vente tout modèles de fer et inox..."></textarea>
+                  </div>
+
+                  <div class="mb-3">
+                    <label class="form-label">
+                      Nom du contact
+                    </label>
+
+                    <input type="text" class="form-control" formControlName="contact_nom"
+                      placeholder="Ex : Tapha Ndoumbé Gueye">
+                  </div>
+
+                  <div class="mb-3">
+                    <label class="form-label">
+                      Email
+                    </label>
+
+                    <input type="email" class="form-control" formControlName="email">
+                  </div>
+
+                  <div class="mb-3">
+                    <label class="form-label">
+                      Adresse
+                    </label>
+
+                    <input type="text" class="form-control" formControlName="adresse">
+                  </div>
+
+                </div>
+
+              </div>
+
+            </div>
+
+
+            <!-- ========================= -->
+            <!-- CONTACT -->
+            <!-- ========================= -->
+
+            <div class="col-md-6">
+
+              <div class="card h-100">
+
+                <div class="card-header">
+                  <strong>Contacts</strong>
+                </div>
+
+                <div class="card-body">
+
+                  <div class="mb-3">
+                    <label class="form-label">
+                      Téléphone principal
+                    </label>
+
+                    <input type="text" class="form-control" formControlName="phone1">
+                  </div>
+
+                  <div class="mb-3">
+                    <label class="form-label">
+                      Téléphone 2
+                    </label>
+
+                    <input type="text" class="form-control" formControlName="phone2">
+                  </div>
+
+                  <div class="mb-3">
+                    <label class="form-label">
+                      Téléphone 3
+                    </label>
+
+                    <input type="text" class="form-control" formControlName="phone3">
+                  </div>
+
+                  <div class="mb-3">
+                    <label class="form-label">
+                      Téléphone 4
+                    </label>
+
+                    <input type="text" class="form-control" formControlName="phone4">
+                  </div>
+
+                </div>
+
+              </div>
+
+            </div>
+
+
+            <!-- ========================= -->
+            <!-- INFORMATIONS LEGALES -->
+            <!-- ========================= -->
+
+            <div class="col-md-6">
+
+              <div class="card">
+
+                <div class="card-header">
+                  <strong>Informations légales</strong>
+                </div>
+
+                <div class="card-body">
+
+                  <div class="mb-3">
+                    <label class="form-label">
+                      NINEA
+                    </label>
+
+                    <input type="text" class="form-control" formControlName="ninea" placeholder="Ex : 011094935">
+                  </div>
+
+                  <div class="mb-3">
+                    <label class="form-label">
+                      Registre de commerce
+                    </label>
+
+                    <input type="text" class="form-control" formControlName="registre_commerce"
+                      placeholder="Ex : SN DKR 2024 A 9341">
+                  </div>
+
+                  <div class="mb-3">
+                    <label class="form-label">
+                      Année d'archivage
+                    </label>
+
+                    <select class="form-select" formControlName="archive">
+
+                      <option *ngFor="let year of listYears" [value]="year">
+                        {{ year }}
+                      </option>
+
+                    </select>
+                  </div>
+
+                </div>
+
+              </div>
+
+            </div>
+
+
+            <!-- ========================= -->
+            <!-- GARANTIE -->
+            <!-- ========================= -->
+
+            <div class="col-md-6">
+
+              <div class="card">
+
+                <div class="card-header">
+                  <strong>Garantie</strong>
+                </div>
+
+                <div class="card-body">
+
+                  <div class="form-check mb-3">
+
+                    <input type="checkbox" class="form-check-input" formControlName="garantie_active"
+                      id="garantie_active">
+
+                    <label class="form-check-label" for="garantie_active">
+                      Afficher la garantie sur les documents
+                    </label>
+
+                  </div>
+
+                  <div class="mb-3">
+
+                    <label class="form-label">
+                      Texte de garantie
+                    </label>
+
+                    <textarea class="form-control" rows="4" formControlName="garantie"
+                      placeholder="Texte de la garantie..."></textarea>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+            </div>
+
+
+            <!-- ========================= -->
+            <!-- POLITIQUE RETOUR -->
+            <!-- ========================= -->
+
+            <div class="col-md-6">
+
+              <div class="card">
+
+                <div class="card-header">
+                  <strong>Politique de retour</strong>
+                </div>
+
+                <div class="card-body">
+
+                  <div class="form-check mb-3">
+
+                    <input type="checkbox" class="form-check-input" formControlName="politique_retour_active"
+                      id="politique_retour_active">
+
+                    <label class="form-check-label" for="politique_retour_active">
+                      Afficher la politique de retour
+                    </label>
+
+                  </div>
+
+                  <div class="mb-3">
+
+                    <label class="form-label">
+                      Texte de la politique
+                    </label>
+
+                    <textarea class="form-control" rows="4" formControlName="politique_retour"
+                      placeholder="Texte de la politique de retour..."></textarea>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+            </div>
+
+            <!-- ========================= -->
+            <!-- EMPRUNT PRODUIT (Super Admin) -->
+            <!-- ========================= -->
+
+            <div class="col-md-6">
+
+              <div class="card">
+
+                <div class="card-header">
+                  <strong>Vente au-delà du stock</strong>
+                </div>
+
+                <div class="card-body">
+
+                  <div class="form-check mb-3">
+
+                    <input type="checkbox" class="form-check-input" formControlName="emprunt_produit_active"
+                      id="emprunt_produit_active">
+
+                    <label class="form-check-label" for="emprunt_produit_active">
+                      Autoriser la vente d'un produit en rupture de stock (emprunt)
+                    </label>
+
+                  </div>
+
+                  <small class="text-muted">
+                    Si désactivé, impossible de sélectionner ou d'augmenter la quantité
+                    d'un produit au-delà du stock disponible en caisse.
+                  </small>
+
+                </div>
+
+              </div>
+
+            </div>
+
+            <div class="col-md-6 mb-2">
+              <label class="form-label">Pas de vente (quantité)</label>
+              <select class="form-select" formControlName="pas_vente" id="pas_vente" [compareWith]="comparePasVente">
+                <option [ngValue]="0.5">0.5</option>
+                <option [ngValue]="1">1</option>
+                <option [ngValue]="2">2</option>
+                <option [ngValue]="3">3</option>
+                <option [ngValue]="5">5</option>
+                <option [ngValue]="10">10</option>
+                <option [ngValue]="12">12</option>
+                <option [ngValue]="24">24</option>
+              </select>
+              <div class="form-text">Incrément utilisé lors de l'ajout/retrait de quantité en vente (ex: 1 = vente à
+                l'unité, 0.5 = demi-unité).</div>
+            </div>
+
+
+
+            <!-- ========================= -->
+            <!-- MAINTENANCE -->
+            <!-- ========================= -->
+
+            <div class="col-md-6" *ngIf="
+                userService.checkPermissionExistence(
+                  firstRoleName +
+                  ' activer desactiver maintenance Paramètre'
+                )
+              ">
+
+              <div class="card">
+
+                <div class="card-header">
+                  <strong>Maintenance</strong>
+                </div>
+
+                <div class="card-body">
+
+                  <label class="form-label">
+                    Activer / Désactiver le mode maintenance
+                  </label>
+
+                  <select class="form-select" [value]="maintenance" (change)="updateMaintenance($any($event.target))">
+
+                    <option value="inactive">
+                      Désactiver
+                    </option>
+
+                    <option value="active">
+                      Activer
+                    </option>
+
+                  </select>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+          <!-- ========================= -->
+          <!-- MODULES ACTIFS (webmaster uniquement) -->
+          <!-- ========================= -->
+
+          <div class="card mt-3" *ngIf="isWebmaster()">
+
+            <div class="card-header bg-dark text-white">
+              <strong>Modules actifs (Super Admin)</strong>
+            </div>
+
+            <div class="card-body" [formGroup]="formModules">
+
+              <div class="row" *ngFor="let group of moduleGroups">
+                <div class="col-12">
+                  <h6 class="mt-2">{{ group.label }}</h6>
+                </div>
+
+                <div class="col-md-4 mb-2" *ngFor="let module of group.modules">
+                  <div class="form-check">
+                    <input type="checkbox" class="form-check-input" [formControlName]="module.key"
+                      [id]="'mod_' + module.key">
+                    <label class="form-check-label" [for]="'mod_' + module.key">
+                      {{ module.label }}
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="d-flex justify-content-end mt-3">
+                <button type="button" class="btn btn-primary" (click)="onUpdateModules()">
+                  Enregistrer les modules
+                </button>
+              </div>
+
+            </div>
+
+          </div>
+
+
+          <!-- ========================= -->
+          <!-- BOUTON -->
+          <!-- ========================= -->
+
+          <div class="d-flex justify-content-center mb-3 mt-4" *ngIf="
+              userService.checkPermissionExistence(
+                firstRoleName +
+                ' modifier information Paramètre'
+              )
+            ">
+
+            <button [disabled]="formUpdate.invalid" type="submit" class="btn btn-primary">
+
+              Mettre à jour
+
+            </button>
+
+          </div>
+
+        </form>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>

@@ -1,0 +1,214 @@
+<div class="login-shell">
+
+  <!-- Colonne image gauche -->
+  <div class="login-visual d-none d-md-flex">
+    <img [src]="settingIconeStock.img_login" alt="Illustration Iconestock" class="login-visual__img" />
+    <div class="login-visual__scrim"></div>
+
+    <div class="login-visual__content">
+      <img src="/assets/img/Icone_Stock_logo.png" alt="Logo Iconestock" class="login-visual__logo">
+      <p class="login-visual__quote">
+        Chaque référence compte.<br>
+        Gardez le contrôle de votre stock, où que vous soyez.
+      </p>
+    </div>
+
+    <div class="login-visual__ticker" aria-hidden="true">
+      <span>ICONESTOCK</span><span>·</span><span>GESTION DE COMMERCE</span><span>·</span>
+      <span>ICONESTOCK</span><span>·</span><span>GESTION DE COMMERCE</span><span>·</span>
+    </div>
+  </div>
+
+  <!-- Colonne formulaire droite -->
+  <div class="login-panel">
+    <div class="login-panel__inner">
+
+      <!-- Logo mobile uniquement -->
+      <img src="/assets/img/Icone_Stock_logo.png" alt="Logo Iconestock" class="login-panel__logo-mobile d-md-none">
+
+      <div class="login-panel__header">
+        <span class="login-eyebrow">Espace commerçant</span>
+        <h1 class="login-title">Bon retour</h1>
+        <p class="login-subtitle">Connectez-vous pour continuer à gérer votre commerce.</p>
+      </div>
+
+      <!-- Alerte : abonnement bientôt expiré -->
+      <div *ngIf="paymentLoaded && paymentService.alerte" class="status-stamp status-stamp--warning">
+
+        <div class="status-stamp__count">
+          {{ this.paymentService.joursRestants }}
+        </div>
+
+        <div class="status-stamp__body">
+
+          <p class="status-stamp__title">
+            Jour(s) avant expiration
+          </p>
+
+          <p class="status-stamp__meta">
+            Échéance le {{ this.paymentService.dateExpiration }}
+          </p>
+
+          <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#modalPaiement"
+            class="status-stamp__action">
+
+            Renouveler maintenant
+            <i class="status-stamp__arrow">→</i>
+
+          </a>
+
+        </div>
+      </div>
+
+
+      <!-- Alerte : abonnement expiré -->
+      <div *ngIf="paymentLoaded && paymentService.actif === false" class="status-stamp status-stamp--danger">
+
+        <div class="status-stamp__icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+            <path d="M12 9v4m0 4h.01" />
+            <circle cx="12" cy="12" r="9" />
+
+          </svg>
+        </div>
+
+        <div class="status-stamp__body">
+
+          <p class="status-stamp__title">
+            Abonnement expiré
+          </p>
+
+          <p class="status-stamp__meta">
+            Votre abonnement a pris fin
+            {{ this.paymentService.dateExpiration
+            ? ' le ' + this.paymentService.dateExpiration
+            : '' }}.
+          </p>
+
+          <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#modalPaiement"
+            class="status-stamp__action">
+
+            Renouveler maintenant
+            <i class="status-stamp__arrow">→</i>
+
+          </a>
+
+        </div>
+      </div>
+
+      <!-- Formulaire de connexion -->
+      <form #loginForm="ngForm" (ngSubmit)="login(loginForm)" autocomplete="off" novalidate class="login-form">
+
+        <div class="field">
+          <label class="field__label">Nom d'utilisateur</label>
+          <input type="text" name="username" ngModel class="field__input" placeholder="Votre identifiant"
+            autocomplete="off">
+        </div>
+
+        <div class="field">
+          <label class="field__label">Mot de passe</label>
+          <div class="field__control">
+            <input [type]="showPassword ? 'text' : 'password'" class="field__input" name="password" ngModel
+              placeholder="Votre mot de passe" autocomplete="off">
+
+            <button type="button" class="field__toggle" (click)="showHidePwd()"
+              [attr.aria-label]="showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'">
+              <svg *ngIf="!showPassword" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                stroke-width="1.8" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 12m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+                <path
+                  d="M22 12c-2.667 4.667 -6 7 -10 7s-7.333 -2.333 -10 -7c2.667 -4.667 6 -7 10 -7s7.333 2.333 10 7" />
+              </svg>
+              <svg *ngIf="showPassword" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                stroke-width="1.8" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 3l18 18"></path>
+                <path d="M10.584 10.587a2 2 0 0 0 2.828 2.83"></path>
+                <path
+                  d="M9.363 5.365a9.466 9.466 0 0 1 2.637 -.365c4 0 7.333 2.333 10 7c-.778 1.361 -1.612 2.524 -2.503 3.488m-2.14 1.861c-1.631 1.1 -3.415 1.651 -5.357 1.651c-4 0 -7.333 -2.333 -10 -7c1.369 -2.395 2.913 -4.175 4.632 -5.341">
+                </path>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="login-form__row">
+          <label class="checkbox">
+            <input type="checkbox" class="checkbox__input" />
+            <span class="checkbox__label">Se souvenir de moi</span>
+          </label>
+          <a class="login-form__forgot" href="#">Mot de passe oublié ?</a>
+        </div>
+
+        <!-- Erreurs -->
+        <p *ngIf="errorMessage" class="login-error">Nom d'utilisateur ou mot de passe incorrect.</p>
+        <p *ngIf="errorAccess" class="login-error">Vous n'avez pas l'autorisation d'accès.</p>
+
+        <!-- Bouton -->
+        <button type="submit" class="login-submit" [disabled]="!isClick">
+          <span *ngIf="isClick">Se connecter</span>
+          <span *ngIf="!isClick" class="login-submit__loading">
+            <span class="spinner" aria-hidden="true"></span> Connexion en cours…
+          </span>
+        </button>
+      </form>
+
+      <div class="login-panel__footer">
+        <a href="https://iconestock.com/condition-generale-utilisation" target="_blank" class="login-panel__link">
+          Termes et conditions d'utilisation
+        </a>
+
+        <a [href]="environment.serverUrl + '/clear-cache'" class="login-panel__link login-panel__link--accent">
+          Optimiser l'application
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DE PAIEMENT -->
+<div class="modal fade" id="modalPaiement" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content pay-modal">
+      <button type="button" class="pay-modal__close" data-bs-dismiss="modal" aria-label="Fermer">×</button>
+      <div class="pay-modal__body">
+        <div class="pay-modal__badge">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+            <path d="M12 9v2m0 4v.01" />
+            <path d="M5 19h14a2 2 0 0 0 1.84 -2.75l-7.1 -12.25a2 2 0 0 0 -3.5 0l-7.1 12.25A2 2 0 0 0 5 19z" />
+          </svg>
+        </div>
+        <h4 class="pay-modal__title">Renouveler l'abonnement</h4>
+        <p class="pay-modal__subtitle">Choisissez une durée pour continuer à profiter de toutes les fonctionnalités.</p>
+
+        <div class="pay-modal__options">
+          <div class="pay-modal__options">
+
+            <a [href]="paymentService.getWaveUrl(1)" class="pay-option">
+              <span class="pay-option__label">1 mois</span>
+              <span class="pay-option__cta">Payer avec Wave</span>
+            </a>
+
+            <a [href]="paymentService.getWaveUrl(3)" class="pay-option">
+              <span class="pay-option__label">3 mois</span>
+              <span class="pay-option__cta">Payer avec Wave</span>
+            </a>
+
+            <a [href]="paymentService.getWaveUrl(6)" class="pay-option">
+              <span class="pay-option__label">6 mois</span>
+              <span class="pay-option__cta">Payer avec Wave</span>
+            </a>
+
+            <a [href]="paymentService.getWaveUrl(12)" class="pay-option pay-option--featured">
+              <span class="pay-option__label">12 mois</span>
+              <span class="pay-option__cta">Payer avec Wave</span>
+            </a>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

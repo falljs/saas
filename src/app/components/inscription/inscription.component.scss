@@ -1,0 +1,244 @@
+.inscription-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    background: #f8fafc;
+}
+
+.inscription-card {
+    width: 100%;
+    max-width: 520px;
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 35px;
+    box-shadow: 0 10px 35px rgba(15, 23, 42, 0.10);
+}
+
+.inscription-logo {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.inscription-logo img {
+    max-width: 190px;
+    max-height: 70px;
+    object-fit: contain;
+}
+
+.inscription-header {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.inscription-header h1 {
+    margin: 0 0 8px;
+    font-size: 27px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.inscription-header p {
+    margin: 0;
+    color: #64748b;
+}
+
+.referral-alert {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: 14px 16px;
+    margin-bottom: 22px;
+    border-radius: 12px;
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    color: #9a3412;
+}
+
+.referral-icon {
+    font-size: 24px;
+}
+
+.referral-alert strong {
+    font-weight: 700;
+}
+
+.form-group {
+    margin-bottom: 18px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 7px;
+    font-weight: 600;
+    color: #334155;
+}
+
+.form-control {
+    width: 100%;
+    height: 46px;
+    border: 1px solid #cbd5e1;
+    border-radius: 9px;
+    padding: 0 13px;
+    font-size: 14px;
+    outline: none;
+    transition: 0.2s;
+    background: #fff;
+}
+
+.form-control:focus {
+    border-color: #b36453;
+    box-shadow: 0 0 0 3px rgba(179, 100, 83, 0.10);
+}
+
+.domain-input {
+    display: flex;
+    align-items: center;
+}
+
+.domain-input .form-control {
+    border-radius: 9px 0 0 9px;
+}
+
+.domain-input span {
+    height: 46px;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-left: 0;
+    border-radius: 0 9px 9px 0;
+    color: #64748b;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.field-help {
+    display: block;
+    margin-top: 5px;
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+.field-error {
+    display: block;
+    margin-top: 5px;
+    font-size: 12px;
+    color: #dc2626;
+}
+
+.referral-input {
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+
+.btn-inscription {
+    width: 100%;
+    height: 48px;
+    border: 0;
+    border-radius: 9px;
+    background: #b36453;
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s;
+    margin-top: 5px;
+}
+
+.btn-inscription:hover {
+    opacity: 0.92;
+}
+
+.btn-inscription:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+.spinner {
+    display: inline-block;
+    width: 17px;
+    height: 17px;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+}
+
+.success-message {
+    display: flex;
+    gap: 12px;
+    padding: 16px;
+    border-radius: 12px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #166534;
+}
+
+.success-icon {
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.success-message p {
+    margin: 5px 0 0;
+    font-size: 13px;
+}
+
+.error-message {
+    padding: 13px 15px;
+    margin-bottom: 20px;
+    border-radius: 9px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #b91c1c;
+    font-size: 14px;
+}
+
+.login-link {
+    margin-top: 22px;
+    text-align: center;
+    font-size: 13px;
+    color: #64748b;
+}
+
+.login-link button {
+    border: 0;
+    background: transparent;
+    color: #b36453;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 0;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (max-width: 576px) {
+
+    .inscription-page {
+        padding: 20px 12px;
+    }
+
+    .inscription-card {
+        padding: 25px 20px;
+        border-radius: 14px;
+    }
+
+    .inscription-header h1 {
+        font-size: 23px;
+    }
+
+    .domain-input span {
+        font-size: 11px;
+        padding: 0 8px;
+    }
+
+}

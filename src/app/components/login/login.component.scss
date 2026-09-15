@@ -1,0 +1,527 @@
+// ==========================================================================
+// Tokens
+// ==========================================================================
+$wine: #5F0E17;
+$wine-dark: #3D080F;
+$wine-light: #7A1622;
+$cream: #F7F3EC;
+$paper: #FFFFFF;
+$charcoal: #211D1B;
+$stone: #8A8580;
+$stone-line: #E4DFD4;
+$gold: #B8860B;
+$danger: #A32D2D;
+$danger-bg: #FCEBEB;
+$warning-bg: #FAEEDA;
+
+$font-display: 'Fraunces', 'Georgia', serif;
+$font-body: 'Inter', -apple-system, sans-serif;
+$font-mono: 'IBM Plex Mono', 'Courier New', monospace;
+
+// ==========================================================================
+// Shell
+// ==========================================================================
+.login-shell {
+    min-height: 100vh;
+    display: flex;
+    background: $cream;
+}
+
+// ---- Colonne visuelle -----------------------------------------------------
+.login-visual {
+    position: relative;
+    flex: 0 0 46%;
+    max-width: 46%;
+    overflow: hidden;
+    flex-direction: column;
+    justify-content: flex-end;
+    background: $wine-dark;
+
+    &__img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    &__scrim {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(190deg, rgba(61, 8, 15, 0.15) 0%, rgba(61, 8, 15, 0.55) 55%, rgba(33, 5, 8, 0.92) 100%);
+    }
+
+    &__content {
+        position: relative;
+        z-index: 1;
+        padding: 3.5rem 3rem 5rem;
+    }
+
+    &__logo {
+        width: 120px;
+        filter: brightness(0) invert(1);
+        opacity: 0.95;
+        margin-bottom: 2.5rem;
+    }
+
+    &__quote {
+        font-family: $font-display;
+        font-weight: 400;
+        font-size: 1.9rem;
+        line-height: 1.35;
+        color: $paper;
+        max-width: 22ch;
+        margin: 0;
+    }
+
+    &__ticker {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        gap: 0.6rem;
+        padding: 0.85rem 0;
+        border-top: 1px solid rgba(255, 255, 255, 0.18);
+        font-family: $font-mono;
+        font-size: 0.7rem;
+        letter-spacing: 0.12em;
+        color: rgba(255, 255, 255, 0.55);
+        white-space: nowrap;
+        overflow: hidden;
+
+        span {
+            flex: none;
+        }
+    }
+}
+
+// ---- Colonne formulaire ----------------------------------------------------
+.login-panel {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5rem 1.5rem;
+
+    &__inner {
+        width: 100%;
+        max-width: 400px;
+    }
+
+    &__logo-mobile {
+        width: 96px;
+        display: block;
+        margin: 0 auto 1.75rem;
+    }
+
+    &__header {
+        margin-bottom: 2rem;
+    }
+
+    &__footer {
+        margin-top: 2.5rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid $stone-line;
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+        text-align: center;
+    }
+
+    &__link {
+        font-size: 0.8rem;
+        color: $stone;
+        text-decoration: none;
+
+        &:hover {
+            color: $charcoal;
+        }
+
+        &--accent {
+            color: $gold;
+
+            &:hover {
+                color: darken($gold, 10%);
+            }
+        }
+    }
+}
+
+.login-eyebrow {
+    display: inline-block;
+    font-family: $font-mono;
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: $gold;
+    margin-bottom: 0.75rem;
+}
+
+.login-title {
+    font-family: $font-display;
+    font-weight: 500;
+    font-size: 2.1rem;
+    color: $charcoal;
+    margin: 0 0 0.4rem;
+}
+
+.login-subtitle {
+    font-family: $font-body;
+    font-size: 0.92rem;
+    color: $stone;
+    margin: 0;
+}
+
+// ==========================================================================
+// Status stamp (alertes abonnement)
+// ==========================================================================
+.status-stamp {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.1rem;
+    border-radius: 4px;
+    margin-bottom: 1.75rem;
+
+    &--warning {
+        background: $warning-bg;
+        border: 1px dashed darken($gold, 5%);
+    }
+
+    &--danger {
+        background: $danger-bg;
+        border: 1px dashed $danger;
+    }
+
+    &__count {
+        flex: none;
+        font-family: $font-mono;
+        font-size: 1.7rem;
+        font-weight: 600;
+        color: darken($gold, 12%);
+        line-height: 1;
+    }
+
+    &__icon {
+        flex: none;
+        color: $danger;
+        display: flex;
+    }
+
+    &__body {
+        min-width: 0;
+    }
+
+    &__title {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: $charcoal;
+        margin: 0 0 0.15rem;
+    }
+
+    &--danger &__title {
+        color: $danger;
+    }
+
+    &__meta {
+        font-size: 0.78rem;
+        color: $stone;
+        margin: 0 0 0.35rem;
+    }
+
+    &__action {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: $wine;
+        text-decoration: none;
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+
+    &__arrow {
+        font-style: normal;
+    }
+}
+
+// ==========================================================================
+// Formulaire
+// ==========================================================================
+.login-form {
+    margin-top: 0.5rem;
+}
+
+.field {
+    margin-bottom: 1.25rem;
+
+    &__label {
+        display: block;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: $charcoal;
+        margin-bottom: 0.4rem;
+    }
+
+    &__control {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    &__input {
+        width: 100%;
+        height: 46px;
+        padding: 0 0.9rem;
+        border: 1px solid $stone-line;
+        border-radius: 6px;
+        background: $paper;
+        font-family: $font-body;
+        font-size: 0.92rem;
+        color: $charcoal;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+        &::placeholder {
+            color: #B4AFA6;
+        }
+
+        &:focus {
+            outline: none;
+            border-color: $wine;
+            box-shadow: 0 0 0 3px rgba(95, 14, 23, 0.1);
+        }
+    }
+
+    &__control .field__input {
+        padding-right: 2.6rem;
+    }
+
+    &__toggle {
+        position: absolute;
+        right: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: none;
+        border: none;
+        padding: 0.2rem;
+        color: $stone;
+        cursor: pointer;
+
+        &:hover {
+            color: $wine;
+        }
+    }
+}
+
+.login-form__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+}
+
+.checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+
+    &__input {
+        width: 16px;
+        height: 16px;
+        accent-color: $wine;
+    }
+
+    &__label {
+        font-size: 0.82rem;
+        color: $charcoal;
+    }
+}
+
+.login-form__forgot {
+    font-size: 0.82rem;
+    color: $stone;
+    text-decoration: none;
+
+    &:hover {
+        color: $wine;
+    }
+}
+
+.login-error {
+    font-size: 0.82rem;
+    color: $danger;
+    background: $danger-bg;
+    padding: 0.6rem 0.8rem;
+    border-radius: 6px;
+    margin: 0 0 1rem;
+}
+
+.login-submit {
+    width: 100%;
+    height: 48px;
+    border: none;
+    border-radius: 6px;
+    background: $wine;
+    color: $paper;
+    font-family: $font-body;
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.05s ease;
+
+    &:hover:not(:disabled) {
+        background: $wine-light;
+    }
+
+    &:active:not(:disabled) {
+        transform: scale(0.99);
+    }
+
+    &:disabled {
+        background: $wine;
+        opacity: 0.75;
+        cursor: default;
+    }
+
+    &__loading {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+    }
+}
+
+.spinner {
+    width: 15px;
+    height: 15px;
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    border-top-color: $paper;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+// ==========================================================================
+// Modal de paiement
+// ==========================================================================
+.pay-modal {
+    border: none;
+    border-radius: 12px;
+    overflow: hidden;
+
+    &__close {
+        position: absolute;
+        top: 0.75rem;
+        right: 0.9rem;
+        background: none;
+        border: none;
+        font-size: 1.4rem;
+        line-height: 1;
+        color: $stone;
+        cursor: pointer;
+
+        &:hover {
+            color: $charcoal;
+        }
+    }
+
+    &__body {
+        padding: 2.25rem 1.75rem 1.75rem;
+        text-align: center;
+    }
+
+    &__badge {
+        width: 44px;
+        height: 44px;
+        margin: 0 auto 1rem;
+        border-radius: 50%;
+        background: $danger-bg;
+        color: $danger;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    &__title {
+        font-family: $font-display;
+        font-size: 1.3rem;
+        font-weight: 500;
+        color: $charcoal;
+        margin: 0 0 0.4rem;
+    }
+
+    &__subtitle {
+        font-size: 0.85rem;
+        color: $stone;
+        margin: 0 0 1.5rem;
+    }
+
+    &__options {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+    }
+}
+
+.pay-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.8rem 1rem;
+    border: 1px solid $stone-line;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: border-color 0.15s ease, background 0.15s ease;
+
+    &__label {
+        font-family: $font-mono;
+        font-size: 0.88rem;
+        font-weight: 600;
+        color: $charcoal;
+    }
+
+    &__cta {
+        font-size: 0.78rem;
+        color: $stone;
+    }
+
+    &:hover {
+        border-color: $wine;
+        background: rgba(95, 14, 23, 0.04);
+
+        .pay-option__cta {
+            color: $wine;
+        }
+    }
+
+    &--featured {
+        border-color: $wine;
+        background: rgba(95, 14, 23, 0.04);
+
+        .pay-option__label {
+            color: $wine;
+        }
+    }
+}
+
+// ==========================================================================
+// Responsive
+// ==========================================================================
+@media (max-width: 767px) {
+    .login-shell {
+        flex-direction: column;
+    }
+
+    .login-panel {
+        padding: 2.5rem 1.25rem;
+    }
+}

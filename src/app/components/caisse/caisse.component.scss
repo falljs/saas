@@ -1,0 +1,649 @@
+/* =========================================================================
+   Caisse — modern redesign
+   Palette pulled from the IconeStock shell (navy sidebar + terracotta accent)
+   ========================================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600&display=swap');
+
+:host {
+  --ink: #171a24;
+  --ink-soft: #6d7280;
+  --ink-faint: #9aa0ac;
+
+  --paper: #f5f4f1;
+  --surface: #ffffff;
+  --border: #e8e6e1;
+
+  --navy: #10152b;
+  --navy-soft: #1c2444;
+
+  --brand: #c1633f;
+  --brand-dark: #9c4e30;
+  --brand-soft: #f6e3d9;
+
+  --green: #2f9e6a;
+  --green-soft: #e4f5ec;
+  --red: #d64545;
+  --red-soft: #fbe7e7;
+  --amber: #dc9c2e;
+  --amber-soft: #fbf1dc;
+  --blue: #3767e0;
+  --blue-soft: #e6ecfd;
+
+  --radius: 14px;
+  --radius-sm: 10px;
+  --shadow: 0 1px 2px rgba(16, 21, 43, 0.04), 0 10px 28px -16px rgba(16, 21, 43, 0.22);
+
+  --font-display: 'Manrope', 'Segoe UI', sans-serif;
+  --font-body: 'Inter', 'Segoe UI', sans-serif;
+
+  display: block;
+  font-family: var(--font-body);
+  color: var(--ink);
+  background: var(--paper);
+}
+
+.caisse-page {
+  padding: 4px 4px 24px;
+}
+
+/* ---------- Toolbar ---------- */
+
+.caisse-toolbar__controls {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 10px;
+  align-items: center;
+}
+
+
+
+
+.caisse-toolbar__actions {
+  display: grid;
+  grid-template-columns: repeat(4, auto);
+  gap: 8px;
+  align-items: center;
+}
+
+.caisse-toolbar {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px 20px;
+  margin-bottom: 20px;
+}
+
+.caisse-toolbar__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.caisse-toolbar__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.5rem;
+  color: var(--ink);
+}
+
+.caisse-toolbar__title .icon-chip {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--navy);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+}
+
+.btn-print {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.btn-print:hover {
+  background: var(--brand-dark);
+  transform: translateY(-1px);
+}
+
+.btn-scope {
+  border: 1px solid var(--border);
+  background: var(--paper);
+  color: var(--ink-soft);
+  border-radius: 999px;
+  padding: 10px 20px;
+  font-weight: 600;
+  font-size: 0.92rem;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.btn-scope:hover:not(:disabled) {
+  border-color: var(--brand);
+  color: var(--brand-dark);
+}
+
+.btn-scope--active {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: #fff;
+}
+
+.btn-scope--active:hover:not(:disabled) {
+  background: var(--navy-soft);
+  color: #fff;
+}
+
+.caisse-toolbar__controls .form-control {
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--paper);
+  font-size: 0.9rem;
+  min-width: 150px;
+}
+
+.caisse-toolbar__controls .form-control:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(193, 99, 63, 0.15);
+  background: var(--surface);
+}
+
+/* ---------- KPI grid ---------- */
+/* =========================================================
+   KPI GRID — CAISSE
+========================================================= */
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+
+  gap: 16px;
+
+  margin-top: 4px;
+  margin-bottom: 20px;
+}
+
+
+/* =========================================================
+   KPI ITEM
+========================================================= */
+
+.kpi-item {
+  min-width: 0;
+  display: flex;
+}
+
+
+/* =========================================================
+   KPI CARD
+========================================================= */
+
+.kpi-card {
+  width: 100%;
+  min-width: 0;
+  min-height: 112px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  padding: 18px 20px;
+
+  background: var(--surface);
+
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+
+  box-shadow:
+    0 3px 10px rgba(16, 21, 43, 0.06);
+
+  position: relative;
+  overflow: hidden;
+
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+
+/* =========================================================
+   BARRE COULEUR GAUCHE
+========================================================= */
+
+.kpi-card::before {
+  content: '';
+
+  position: absolute;
+
+  top: 0;
+  left: 0;
+
+  width: 4px;
+  height: 100%;
+
+  background: var(--accent, var(--brand));
+}
+
+
+/* =========================================================
+   HOVER
+========================================================= */
+
+.kpi-card:hover {
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 8px 20px rgba(16, 21, 43, 0.09);
+}
+
+
+/* =========================================================
+   LABEL
+========================================================= */
+
+.kpi-card__label {
+  min-width: 0;
+
+  margin-bottom: 8px;
+
+  font-family: var(--font-body);
+
+  font-size: 13px;
+  line-height: 1.2;
+
+  font-weight: 600;
+
+  color: var(--ink-soft);
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
+/* =========================================================
+   VALUE
+========================================================= */
+
+.kpi-card__value {
+  min-width: 0;
+
+  font-family: var(--font-display);
+
+  font-size: 25px;
+  line-height: 1.15;
+
+  font-weight: 800;
+
+  color: var(--ink);
+
+  white-space: nowrap;
+
+  letter-spacing: -0.4px;
+}
+
+
+/* =========================================================
+   HERO
+========================================================= */
+
+.kpi-card--hero {
+  --accent: var(--navy);
+
+  background: var(--navy);
+
+  border-color: var(--navy);
+
+  box-shadow:
+    0 5px 15px rgba(16, 21, 43, 0.15);
+}
+
+.kpi-card--hero::before {
+  display: none;
+}
+
+.kpi-card--hero .kpi-card__label {
+  color: #cbd5e1;
+}
+
+.kpi-card--hero .kpi-card__value {
+  color: #ffffff;
+
+  font-size: 27px;
+}
+
+
+/* =========================================================
+   CAISSE PRINCIPALE
+========================================================= */
+
+.kpi-card--caisse {
+  --accent: var(--navy);
+
+  background: var(--navy);
+
+  border-color: var(--navy);
+
+  box-shadow:
+    0 6px 18px rgba(16, 21, 43, 0.18);
+}
+
+.kpi-card--caisse::before {
+  display: none;
+}
+
+.kpi-card--caisse .kpi-card__label {
+  color: #cbd5e1;
+}
+
+.kpi-card--caisse .kpi-card__value {
+  color: #ffffff;
+
+  font-size: 27px;
+}
+
+
+/* =========================================================
+   COULEURS KPI
+========================================================= */
+
+.kpi-card--green {
+  --accent: var(--green);
+}
+
+.kpi-card--amber {
+  --accent: var(--amber);
+}
+
+.kpi-card--red {
+  --accent: var(--red);
+}
+
+.kpi-card--brand {
+  --accent: var(--brand);
+}
+
+.kpi-card--blue {
+  --accent: var(--blue);
+}
+
+
+/* =========================================================
+   TABLETTE
+========================================================= */
+
+@media (max-width: 1100px) {
+
+  .kpi-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 768px) {
+
+  .kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .kpi-card {
+    min-height: 105px;
+
+    padding: 15px;
+  }
+
+  .kpi-card__label {
+    font-size: 12px;
+  }
+
+  .kpi-card__value {
+    font-size: 21px;
+  }
+
+  .kpi-card--hero .kpi-card__value,
+  .kpi-card--caisse .kpi-card__value {
+    font-size: 23px;
+  }
+
+}
+
+
+/* =========================================================
+   PETIT MOBILE
+========================================================= */
+
+@media (max-width: 480px) {
+
+  .kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .kpi-card {
+    min-height: 100px;
+  }
+
+}
+
+/* ---------- Ticket status strip ---------- */
+
+.ticket-strip {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 4px;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.ticket-item {
+  flex: 1 1 220px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  transition: background 0.15s ease;
+}
+
+.ticket-item:hover {
+  background: var(--paper);
+}
+
+.ticket-item__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.ticket-item--sold .ticket-item__icon {
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
+.ticket-item--paid .ticket-item__icon {
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.ticket-item--pending .ticket-item__icon {
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+
+.ticket-item--unpaid .ticket-item__icon {
+  background: var(--red-soft);
+  color: var(--red);
+}
+
+.ticket-item__text {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--ink);
+}
+
+/* ---------- Tabs + table card ---------- */
+
+.data-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.data-card__tabs {
+  display: flex;
+  gap: 4px;
+  padding: 10px 14px 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--paper);
+}
+
+.data-card__tabs .nav-link {
+  border: none !important;
+  background: transparent !important;
+  color: var(--ink-soft);
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 10px 16px;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+
+.data-card__tabs .nav-link.active {
+  color: var(--brand-dark);
+  background: var(--surface) !important;
+  box-shadow: inset 0 -2px 0 var(--brand);
+}
+
+.data-card__panel-header {
+  padding: 18px 20px 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--ink);
+  text-transform: none;
+}
+
+.table-modern {
+  margin: 0;
+}
+
+.table-modern thead th {
+  background: var(--paper);
+  color: var(--ink-soft);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--border);
+  padding: 12px 14px;
+}
+
+.table-modern tbody td {
+  padding: 12px 14px;
+  font-size: 0.88rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.table-modern tbody tr:hover {
+  background: var(--paper);
+}
+
+.table-modern tbody tr.row-deleted {
+  text-decoration: line-through;
+  background: var(--red-soft);
+  color: var(--red);
+}
+
+.amount-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.amount-pill--ok {
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.amount-pill--bad {
+  background: var(--red-soft);
+  color: var(--red);
+}
+
+.wave-tag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--blue-soft);
+  color: var(--blue);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+/* ---------- Calculator popup (brand pass) ---------- */
+
+#inputCalcule {
+  width: 100%;
+  text-align: right;
+  font-family: var(--font-display);
+  font-size: 42px;
+  font-weight: 800;
+  color: var(--ink);
+  border: none;
+  background: transparent;
+  padding: 8px 4px;
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 767px) {
+  .caisse-toolbar__controls {
+    flex-wrap: wrap;
+  }
+
+  .caisse-toolbar__controls .form-control {
+    width: 100%;
+    min-width: 100%;
+    flex: 1 1 100%;
+  }
+
+  .kpi-card__value {
+    font-size: 1.35rem;
+  }
+
+  .kpi-card--hero .kpi-card__value {
+    font-size: 1.6rem;
+  }
+}

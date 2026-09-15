@@ -1,0 +1,339 @@
+<div *ngIf="loading" class="referral-loading">
+    <div class="spinner-border" role="status">
+        <span class="visually-hidden">Chargement...</span>
+    </div>
+
+    <span>
+        Chargement de votre espace parrainage...
+    </span>
+
+</div>
+
+<div *ngIf="referral as data" class="container-fluid referral-page">
+
+    <!-- =========================================================
+     HERO
+========================================================= -->
+    <div class="referral-hero">
+
+        <div class="referral-hero__content">
+
+            <div class="referral-icon">
+                <i class="ti ti-gift"></i>
+            </div>
+
+            <div>
+
+                <h1>
+                    Invitez vos amis
+                </h1>
+
+                <p>
+                    Partagez IconeStock avec vos proches et
+                    <strong>gagnez 1 mois gratuit</strong>
+                    pour chaque ami qui s'abonne.
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================================================
+     LIEN DE PARRAINAGE
+========================================================== -->
+    <div class="referral-link-card">
+
+        <div class="referral-link-card__header">
+
+            <div>
+
+                <span class="section-label">
+                    Votre lien de parrainage
+                </span>
+
+                <h3>
+                    Partagez votre lien
+                </h3>
+
+            </div>
+
+            <span class="referral-code">
+                {{ data.referral_code }}
+            </span>
+
+        </div>
+
+
+        <!-- Lien -->
+        <div class="referral-link-box">
+
+            <span>
+                {{ data.referral_link }}
+            </span>
+
+            <button type="button" class="btn-copy" (click)="copyReferralLink()">
+
+                <i class="ti ti-copy"></i>
+
+                {{ copied ? 'Copié !' : 'Copier' }}
+
+            </button>
+
+        </div>
+
+
+        <!-- Boutons partage -->
+        <div class="referral-share">
+
+            <button type="button" class="btn-share" (click)="shareWhatsApp()">
+
+                <i class="ti ti-brand-whatsapp"></i>
+
+                WhatsApp
+
+            </button>
+
+
+            <button type="button" class="btn-share btn-share--secondary" (click)="shareReferral()">
+
+                <i class="ti ti-share"></i>
+
+                Partager
+
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================================================
+     KPI
+========================================================== -->
+    <div class="referral-kpis">
+
+        <!-- Invités -->
+        <div class="referral-kpi">
+
+            <div class="referral-kpi__icon">
+                <i class="ti ti-users"></i>
+            </div>
+
+            <div>
+
+                <span>
+                    Invités
+                </span>
+
+                <strong>
+                    {{ data.stats.total_invites }}
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        <!-- En attente -->
+        <div class="referral-kpi">
+
+            <div class="referral-kpi__icon">
+                <i class="ti ti-clock"></i>
+            </div>
+
+            <div>
+
+                <span>
+                    En attente
+                </span>
+
+                <strong>
+                    {{ data.stats.en_attente }}
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        <!-- Mois offerts -->
+        <div class="referral-kpi referral-kpi--success">
+
+            <div class="referral-kpi__icon">
+                <i class="ti ti-gift"></i>
+            </div>
+
+            <div>
+
+                <span>
+                    Mois offerts
+                </span>
+
+                <strong>
+                    {{ data.stats.mois_offerts }}
+                </strong>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================================================
+     INVITATIONS
+========================================================== -->
+    <div class="card referral-list-card">
+
+        <div class="card-header">
+
+            <div>
+
+                <h3 class="card-title">
+                    Mes invitations
+                </h3>
+
+                <p class="text-secondary mb-0">
+                    Suivez les personnes invitées avec votre lien.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="table-responsive">
+
+            <table class="table table-vcenter">
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Entreprise
+                        </th>
+
+                        <th>
+                            Date
+                        </th>
+
+                        <th>
+                            Statut
+                        </th>
+
+                        <th>
+                            Récompense
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    <!-- Invitations -->
+                    <tr *ngFor="let item of data.referrals">
+
+                        <!-- Entreprise -->
+                        <td>
+
+                            <strong>
+                                {{ item.nom }}
+                            </strong>
+
+                        </td>
+
+
+                        <!-- Date -->
+                        <td>
+
+                            {{ item.date | date:'dd/MM/yyyy' }}
+
+                        </td>
+
+
+                        <!-- Statut -->
+                        <td>
+
+                            <span *ngIf="item.statut === 'converti'" class="badge bg-success-lt">
+
+                                <i class="ti ti-check"></i>
+
+                                Converti
+
+                            </span>
+
+
+                            <span *ngIf="item.statut === 'en_attente'" class="badge bg-yellow-lt">
+
+                                <i class="ti ti-clock"></i>
+
+                                En attente
+
+                            </span>
+
+                        </td>
+
+
+                        <!-- Récompense -->
+                        <td>
+
+                            <span *ngIf="item.recompense_mois > 0">
+
+                                +{{ item.recompense_mois }}
+                                mois gratuit
+
+                            </span>
+
+
+                            <span *ngIf="item.recompense_mois === 0" class="text-secondary">
+
+                                —
+
+                            </span>
+
+                        </td>
+
+                    </tr>
+
+
+                    <!-- Aucun invité -->
+                    <tr *ngIf="!data.referrals.length">
+
+                        <td colspan="4" class="text-center py-5">
+
+                            <i class="ti ti-users-group fs-1 text-secondary"></i>
+
+
+                            <div class="mt-2">
+
+                                Vous n'avez encore invité personne.
+
+                            </div>
+
+
+                            <small class="text-secondary">
+
+                                Partagez votre lien pour commencer à gagner
+                                des mois gratuits.
+
+                            </small>
+
+                        </td>
+
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>

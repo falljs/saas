@@ -1,0 +1,613 @@
+<div class="caisse-page container-fluid">
+
+  <!-- Toolbar -->
+  <div class="caisse-toolbar">
+
+    <div class="caisse-toolbar__head">
+      <h2 class="caisse-toolbar__title">
+        <span class="icon-chip">
+          <i class="fa fa-cash-register" aria-hidden="true"></i>
+        </span>
+        Caisse
+      </h2>
+
+      <div class="caisse-toolbar__actions">
+
+        <button class="btn-print" *ngIf="isToDay" (click)="printToDay()" title="Imprimer aujourd'hui">
+          <i class="fa fa-print"></i>
+          <span>Aujourd'hui</span>
+        </button>
+
+        <button class="btn-print" *ngIf="isAll" (click)="printAll()" title="Imprimer tout">
+          <i class="fa fa-print"></i>
+          <span>Tout</span>
+        </button>
+
+        <button class="btn-print" *ngIf="isDate" (click)="printDate()" title="Imprimer la date">
+          <i class="fa fa-print"></i>
+          <span>Date</span>
+        </button>
+
+        <button class="btn-print" *ngIf="is2Date" (click)="printTwoDate()" title="Imprimer la période">
+          <i class="fa fa-print"></i>
+          <span>Période</span>
+        </button>
+
+      </div>
+    </div>
+
+    <div class="caisse-toolbar__controls">
+
+      <!-- Bouton Toutes les ventes -->
+      <button [disabled]="isDisable" type="button" (click)="getCommandes()" class="btn-scope"
+        [ngClass]="{ 'btn-scope--active': isAll }">
+
+        <span *ngIf="!isDisable && !isClick">
+          Toutes les ventes
+        </span>
+
+        <span *ngIf="isDisable && isClick" class="spinner-border spinner-border-sm me-1">
+        </span>
+
+        <span *ngIf="isDisable && isClick">
+          Chargement...
+        </span>
+
+      </button>
+
+      <!-- Une date -->
+      <input onfocus="(this.type='date')" (change)="onChangeDate($event.target)" name="date" type="text"
+        class="form-control" placeholder="Par Date" />
+
+      <!-- Date début -->
+      <input onfocus="(this.type='date')" (change)="onChange2DatesFirst($event.target)" name="date" type="text"
+        class="form-control" placeholder="Date début" />
+
+      <!-- Date fin -->
+      <input onfocus="(this.type='date')" (change)="onChange2DatesSecond($event.target)" name="date" type="text"
+        class="form-control" placeholder="Date fin" [disabled]="!is2DateTrue" />
+
+    </div>
+
+  </div>
+
+  <!-- KPI grid -->
+  <!-- =========================================================
+     KPI GRID
+========================================================== -->
+  <div class="kpi-grid">
+
+    <!-- TOTAL DES VENTES -->
+    <div class="kpi-item" *ngIf="
+      userService.checkPermissionExistence(
+        firstRoleName + ' voir total ventes Caisse'
+      )
+    ">
+      <div class="kpi-card kpi-card--hero">
+        <div class="kpi-card__label">
+          Total des ventes
+        </div>
+
+        <div class="kpi-card__value">
+          {{ totalVente | number:'1.0-0' }} F CFA
+        </div>
+      </div>
+    </div>
+
+
+    <!-- VENTES ENCAISSÉES -->
+    <div class="kpi-item" *ngIf="
+      userService.checkPermissionExistence(
+        firstRoleName + ' voir ventes encaissés Caisse'
+      )
+    ">
+      <div class="kpi-card kpi-card--green">
+
+        <div class="kpi-card__label">
+          Ventes encaissées
+        </div>
+
+        <div class="kpi-card__value">
+          {{ totalVentesEncaissees | number:'1.0-0' }} F CFA
+        </div>
+
+      </div>
+    </div>
+
+
+    <!-- TOTAL RESTANT -->
+    <div class="kpi-item" *ngIf="
+      userService.checkPermissionExistence(
+        firstRoleName + ' voir total restants Caisse'
+      )
+    ">
+      <div class="kpi-card kpi-card--amber">
+
+        <div class="kpi-card__label">
+          Total restant
+        </div>
+
+        <div class="kpi-card__value">
+          {{
+          totalVente - totalVentesEncaissees
+          | number:'1.0-0'
+          }}
+          F CFA
+        </div>
+
+      </div>
+    </div>
+
+
+    <!-- =======================================================
+       TOTAL VERSEMENTS
+       UNIQUEMENT SI LE MODULE EST ACTIF
+  ======================================================== -->
+    <div class="kpi-item" *ngIf="
+      caisseActive &&
+      userService.checkPermissionExistence(
+        firstRoleName + ' voir total versements Caisse'
+      )
+    ">
+      <div class="kpi-card kpi-card--amber">
+
+        <div class="kpi-card__label">
+          Total versements
+        </div>
+
+        <div class="kpi-card__value">
+          {{
+          encaissements_sum - decaissements_sum
+          | number:'1.0-0'
+          }}
+          F CFA
+        </div>
+
+      </div>
+    </div>
+
+
+    <!-- TOTAL REMBOURSEMENT -->
+    <div class="kpi-item" *ngIf="
+      userService.checkPermissionExistence(
+        firstRoleName + ' voir total remboursements Caisse'
+      )
+    ">
+      <div class="kpi-card kpi-card--red">
+
+        <div class="kpi-card__label">
+          Total remboursement
+        </div>
+
+        <div class="kpi-card__value">
+          {{ totalRemboursement | number:'1.0-0' }} F CFA
+        </div>
+
+      </div>
+    </div>
+
+
+    <!-- DETTE ENCAISSÉE -->
+    <div class="kpi-item" *ngIf="
+      userService.checkPermissionExistence(
+        firstRoleName + ' voir dettes encaissées Caisse'
+      )
+    ">
+      <div class="kpi-card kpi-card--brand">
+
+        <div class="kpi-card__label">
+          Dette encaissée
+        </div>
+
+        <div class="kpi-card__value">
+          {{ totalDette | number:'1.0-0' }} F CFA
+        </div>
+
+      </div>
+    </div>
+
+
+    <!-- TOTAL ENCAISSEMENTS -->
+    <div class="kpi-item" *ngIf="
+      userService.checkPermissionExistence(
+        firstRoleName + ' voir total encaissements Caisse'
+      )
+    ">
+      <div class="kpi-card kpi-card--green">
+
+        <div class="kpi-card__label">
+          Total encaissements
+        </div>
+
+        <div class="kpi-card__value">
+          {{ totlaAvanceReglement | number:'1.0-0' }} F CFA
+        </div>
+
+      </div>
+    </div>
+
+
+    <!-- TOTAL FRAIS -->
+    <div class="kpi-item" *ngIf="
+      userService.checkPermissionExistence(
+        firstRoleName + ' voir total frais Caisse'
+      )
+    ">
+      <div class="kpi-card kpi-card--amber">
+
+        <div class="kpi-card__label">
+          Total des frais
+        </div>
+
+        <div class="kpi-card__value">
+          {{ totalFrais | number:'1.0-0' }} F CFA
+        </div>
+
+      </div>
+    </div>
+
+
+    <!-- TOTAL BÉNÉFICES -->
+    <div class="kpi-item" *ngIf="
+      userService.checkPermissionExistence(
+        firstRoleName + ' voir total bénéfices Caisse'
+      )
+    ">
+      <div class="kpi-card kpi-card--brand">
+
+        <div class="kpi-card__label">
+          Total des bénéfices
+        </div>
+
+        <div class="kpi-card__value">
+          {{ totalBenefice | number:'1.0-0' }} F CFA
+        </div>
+
+      </div>
+    </div>
+
+
+    <!-- TOTAL WAVE -->
+    <div class="kpi-item" *ngIf="
+      userService.checkPermissionExistence(
+        firstRoleName + ' voir total waves Caisse'
+      )
+    ">
+      <div class="kpi-card kpi-card--blue">
+
+        <div class="kpi-card__label">
+          Total dans le Wave
+        </div>
+
+        <div class="kpi-card__value">
+          {{ totalWave | number:'1.0-0' }} F CFA
+        </div>
+
+      </div>
+    </div>
+
+
+    <!-- TOTAL CHÈQUES -->
+    <div class="kpi-item" *ngIf="
+      userService.checkPermissionExistence(
+        firstRoleName + ' voir total chèques Caisse'
+      )
+    ">
+      <div class="kpi-card kpi-card--blue">
+
+        <div class="kpi-card__label">
+          Total chèques
+        </div>
+
+        <div class="kpi-card__value">
+          {{ totalCheque | number:'1.0-0' }} F CFA
+        </div>
+
+      </div>
+    </div>
+
+
+    <!-- =======================================================
+       TOTAL DANS LA CAISSE
+  ======================================================== -->
+    <div class="kpi-item" *ngIf="
+      userService.checkPermissionExistence(
+        firstRoleName + ' voir total caisses Caisse'
+      )
+    ">
+      <div class="kpi-card kpi-card--hero kpi-card--caisse">
+
+        <div class="kpi-card__label">
+          Total dans la caisse
+        </div>
+
+        <div class="kpi-card__value">
+          {{ totalCaisse | number:'1.0-0' }} F CFA
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Ticket status strip -->
+  <div class="row mt-3">
+    <div class="col-12">
+      <div class="ticket-strip">
+
+        <a href="javascript:void(0)" class="ticket-item ticket-item--sold" title="Cliquer pour plus de détails">
+          <span class="ticket-item__icon"><i class="fa fa-usd" aria-hidden="true"></i></span>
+          <span class="ticket-item__text">{{nbr_cmd}} Ticket(s) vendu(s)</span>
+        </a>
+
+        <a href="javascript:void(0)" class="ticket-item ticket-item--paid user-select-none"
+          title="Cliquer pour plus de détails">
+          <span class="ticket-item__icon"><i class="fa fa-check" aria-hidden="true"></i></span>
+          <span class="ticket-item__text">{{nbr_cmd_payee}} Ticket(s) paiement(s) complet</span>
+        </a>
+
+        <a href="javascript:void(0)" class="ticket-item ticket-item--pending" title="Cliquer pour plus de détails">
+          <span class="ticket-item__icon"><i class="fa fa-spinner" aria-hidden="true"></i></span>
+          <span class="ticket-item__text">{{nbr_cmd_encours}} Ticket(s) en cours de paiement(s)</span>
+        </a>
+
+        <a href="javascript:void(0)" class="ticket-item ticket-item--unpaid" title="Cliquer pour plus de détails">
+          <span class="ticket-item__icon"><i class="fa fa-ban" aria-hidden="true"></i></span>
+          <span class="ticket-item__text">{{nbr_cmd_no_payee}} Ticket(s) non payé(s)</span>
+        </a>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs + table -->
+  <div class="row mt-3">
+    <div class="col-md-12">
+
+      <div class="data-card">
+
+        <ul class="nav data-card__tabs" data-bs-toggle="tabs" role="tablist">
+          <li class="nav-item" role="presentation"
+            *ngIf="userService.checkPermissionExistence(firstRoleName+ ' voir liste encaissements Caisse')">
+            <a href="#encaissements" class="nav-link active" data-bs-toggle="tab" aria-selected="true"
+              role="tab">Encaissements</a>
+          </li>
+
+          <li class="nav-item" role="presentation"
+            *ngIf="userService.checkPermissionExistence(firstRoleName+ ' voir liste remboursements Caisse')">
+            <a href="#remboursement" class="nav-link" data-bs-toggle="tab" aria-selected="false" role="tab"
+              tabindex="-1">Remboursement</a>
+          </li>
+
+          <li class="nav-item" role="presentation"
+            *ngIf="userService.checkPermissionExistence(firstRoleName+ ' voir liste dettes payées Caisse')">
+            <a href="#dettePayee" class="nav-link" data-bs-toggle="tab" aria-selected="false" role="tab"
+              tabindex="-1">Dettes payées aujourd'hui</a>
+          </li>
+        </ul>
+
+        <div class="tab-content">
+
+          <div class="tab-pane active show" id="encaissements" role="tabpanel"
+            *ngIf="userService.checkPermissionExistence(firstRoleName+ ' voir liste encaissements Caisse')">
+
+            <div class="data-card__panel-header">Encaissements</div>
+
+            <div class="p-3">
+              <div class="table-responsive border rounded" style="height: 500px;">
+
+                <table class="table table-modern table-vcenter text-nowrap datatable sticky-top" id="tableComm">
+
+                  <thead>
+                    <tr>
+                      <th>Numéro</th>
+                      <th>Date</th>
+                      <th>Date Encaissé</th>
+                      <th>Encaissé par</th>
+                      <th>Client</th>
+                      <th>Total Cmd</th>
+                      <th>Encaissé</th>
+                      <th>Mode</th>
+                      <th>Monnaie</th>
+                      <th>Total Restant</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+
+                    <tr *ngFor="let reg of listVersement" [ngClass]="{
+                        'row-deleted': reg.isDelete == 1
+                    }">
+
+                      <!-- Numéro -->
+                      <td>
+                        {{ reg.commande?.numero }}
+                      </td>
+
+                      <!-- Date commande -->
+                      <td>
+                        {{ reg.commande?.created_at | date:'dd/MM/yyyy HH:mm' }}
+                      </td>
+
+                      <!-- Date encaissement -->
+                      <td>
+                        {{ reg.created_at | date:'dd/MM/yyyy HH:mm' }}
+                      </td>
+
+                      <!-- Auteur -->
+                      <td>
+                        {{ reg.auteur }}
+                      </td>
+
+                      <!-- Client -->
+                      <td>
+                        {{ reg.commande?.nom_client }}
+                      </td>
+
+                      <!-- Total commande -->
+                      <td>
+                        {{ reg.commande?.net | number:'1.0-0' }} F CFA
+                      </td>
+
+                      <!-- Montant réellement encaissé -->
+                      <td>
+                        <span class="amount-pill" [ngClass]="
+                                reg.isDelete == 1
+                                    ? 'amount-pill--bad'
+                                    : 'amount-pill--ok'
+                            ">
+
+                          {{ reg.avance | number:'1.0-0' }} F CFA
+
+                        </span>
+                      </td>
+
+                      <!-- MODE DE PAIEMENT -->
+                      <td>
+
+                        <!-- WAVE -->
+                        <span *ngIf="reg.wave > 0" class="wave-tag">
+                          Wave
+                        </span>
+
+                        <!-- CHÈQUE -->
+                        <span *ngIf="reg.cheque > 0" class="badge bg-success">
+                          Chèque
+                        </span>
+
+                        <!-- ESPÈCES -->
+                        <span *ngIf="
+                                (!reg.wave || reg.wave <= 0)
+                                &&
+                                (!reg.cheque || reg.cheque <= 0)
+                            " class="badge bg-secondary">
+                          Espèces
+                        </span>
+
+                      </td>
+
+                      <!-- MONNAIE -->
+                      <td>
+
+                        <span *ngIf="reg.remboursement > 0" class="text-danger fw-bold">
+
+                          {{ reg.remboursement | number:'1.0-0' }} F CFA
+
+                        </span>
+
+                        <span *ngIf="!reg.remboursement || reg.remboursement <= 0" class="text-muted">
+
+                          0 F CFA
+
+                        </span>
+
+                      </td>
+
+                      <!-- RESTANT -->
+                      <td>
+                        <strong>
+                          {{ reg.restant | number:'1.0-0' }} F CFA
+                        </strong>
+                      </td>
+
+                    </tr>
+
+                  </tbody>
+
+                </table>
+
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-pane" id="remboursement" role="tabpanel"
+            *ngIf="userService.checkPermissionExistence(firstRoleName+ ' voir liste remboursements Caisse')">
+
+            <div class="data-card__panel-header">Remboursement</div>
+
+            <div class="p-3">
+              <div class="table-responsive border rounded" style="height: 350px;">
+                <table class="table table-modern table-vcenter text-nowrap datatable sticky-top" id="tableComm">
+                  <thead>
+                    <tr>
+                      <th>Numéro</th>
+                      <th>Date</th>
+                      <th>Date Rembourser</th>
+                      <th>Rembourser par</th>
+                      <th>Client</th>
+                      <th>Motif</th>
+                      <th>Versement Commande</th>
+                      <th>Montant Remboursé</th>
+                      <th>Total Commande</th>
+                      <th>Restant Commande</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let remboursement of this.listeRemboursements"
+                      [ngClass]="{'row-deleted': remboursement.isDelete == 1}">
+                      <td>{{remboursement.commande?.numero}}</td>
+                      <td>{{remboursement.commande?.created_at | date:'dd/MM/yyyy HH:mm' }}</td>
+                      <td>{{remboursement.created_at | date:'dd/MM/yyyy HH:mm' }}</td>
+                      <td>{{remboursement.auteur}}</td>
+                      <td>{{remboursement.commande?.nom_client}}</td>
+                      <td>{{remboursement.motif}}</td>
+                      <td>{{remboursement.commande?.versement | number: '1.0-0'}} F CFA</td>
+                      <td><span class="amount-pill amount-pill--ok">{{remboursement.montant | number: '1.0-0'}} F
+                          CFA</span></td>
+                      <td>{{remboursement.commande?.net | number: '1.0-0'}} F CFA</td>
+                      <td>{{remboursement.commande?.restant | number: '1.0-0'}} F CFA</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-pane" id="dettePayee" role="tabpanel"
+            *ngIf="userService.checkPermissionExistence(firstRoleName+ ' voir liste dettes payées Caisse')">
+
+            <div class="data-card__panel-header">Dettes payées aujourd'hui</div>
+
+            <div class="p-3">
+              <div class="table-responsive border rounded" style="height: 350px;">
+                <table class="table table-modern table-vcenter text-nowrap datatable">
+                  <thead>
+                    <tr>
+                      <th>Numéro</th>
+                      <th>Date</th>
+                      <th>Date Encaissé</th>
+                      <th>Encaissé par</th>
+                      <th>Client</th>
+                      <th>Total Cmd</th>
+                      <th>Total Avance</th>
+                      <th>Total Restant</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let reg of this.listeDettePaie" [ngClass]="{'row-deleted': reg.isDelete == 1}">
+                      <td>{{reg.commande?.numero}}</td>
+                      <td>{{reg.commande?.created_at | date:'dd/MM/yyyy HH:mm' }}</td>
+                      <td>{{reg.created_at | date:'dd/MM/yyyy HH:mm' }}</td>
+                      <td>{{reg.auteur}}</td>
+                      <td>{{reg.commande?.nom_client}}</td>
+                      <td>{{reg.commande?.net | number: '1.0-0'}} F CFA</td>
+                      <td>
+                        <span class="amount-pill"
+                          [ngClass]="reg.isDelete == 1 ? 'amount-pill--bad' : 'amount-pill--ok'">
+                          {{ reg.avance | number: '1.0-0' }} F CFA
+                        </span>
+                        <span *ngIf="reg.wave" class="wave-tag">Wave</span>
+                      </td>
+                      <td>{{reg.restant | number: '1.0-0'}} F CFA</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

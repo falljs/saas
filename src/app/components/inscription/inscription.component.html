@@ -1,0 +1,272 @@
+<div class="inscription-page">
+
+    <div class="inscription-card">
+
+        <!-- =========================================================
+         LOGO
+    ========================================================== -->
+
+        <div class="inscription-logo">
+
+            <img src="assets/img/Icone_Stock_logo.png" alt="IconeStock">
+
+        </div>
+
+
+        <!-- =========================================================
+         TITRE
+    ========================================================== -->
+
+        <div class="inscription-header">
+
+            <h1>
+                Créez votre compte
+            </h1>
+
+            <p>
+                Gérez votre stock simplement avec IconeStock.
+            </p>
+
+        </div>
+
+
+        <!-- =========================================================
+         PARRAINAGE
+    ========================================================== -->
+
+        <div class="referral-alert" *ngIf="referralCode">
+
+            <div class="referral-icon">
+                🎁
+            </div>
+
+            <div>
+
+                <strong>
+                    Vous avez été invité !
+                </strong>
+
+                <div>
+                    Code de parrainage :
+                    <strong>{{ referralCode }}</strong>
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =========================================================
+         SUCCÈS
+    ========================================================== -->
+
+        <div class="success-message" *ngIf="success">
+
+            <div class="success-icon">
+                ✓
+            </div>
+
+            <div>
+
+                <strong>
+                    Inscription réussie !
+                </strong>
+
+                <p>
+                    Votre espace IconeStock a été créé.
+                    Vous allez être redirigé vers la connexion...
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <!-- =========================================================
+         ERREUR
+    ========================================================== -->
+
+        <div class="error-message" *ngIf="errorMessage">
+
+            {{ errorMessage }}
+
+        </div>
+
+
+        <!-- =========================================================
+         FORMULAIRE
+    ========================================================== -->
+
+        <form [formGroup]="inscriptionForm" (ngSubmit)="submit()" *ngIf="!success">
+
+
+            <!-- ENTREPRISE -->
+
+            <div class="form-group">
+
+                <label>
+                    Nom de l'entreprise
+                </label>
+
+                <input type="text" formControlName="nom_entreprise" placeholder="Ex : Ma Boutique" class="form-control">
+
+                <small class="field-error" *ngIf="
+            f['nom_entreprise'].touched &&
+            f['nom_entreprise'].invalid
+          ">
+                    Le nom de l'entreprise est obligatoire.
+                </small>
+
+            </div>
+
+
+            <!-- SOUS-DOMAINE -->
+
+            <div class="form-group">
+
+                <label>
+                    Votre sous-domaine
+                </label>
+
+                <div class="domain-input">
+
+                    <input type="text" formControlName="sous_domaine" placeholder="maboutique" class="form-control"
+                        (input)="normalizeSubdomain()">
+
+                    <span>
+                        .iconestock.com
+                    </span>
+
+                </div>
+
+                <small class="field-help">
+                    Exemple : maboutique.iconestock.com
+                </small>
+
+                <small class="field-error" *ngIf="
+            f['sous_domaine'].touched &&
+            f['sous_domaine'].invalid
+          ">
+                    Utilisez uniquement des lettres, chiffres et tirets.
+                </small>
+
+            </div>
+
+
+            <!-- EMAIL -->
+
+            <div class="form-group">
+
+                <label>
+                    Adresse email
+                </label>
+
+                <input type="email" formControlName="email" placeholder="vous@entreprise.com" class="form-control">
+
+                <small class="field-error" *ngIf="
+            f['email'].touched &&
+            f['email'].invalid
+          ">
+                    Veuillez saisir une adresse email valide.
+                </small>
+
+            </div>
+
+
+            <!-- PASSWORD -->
+
+            <div class="form-group">
+
+                <label>
+                    Mot de passe
+                </label>
+
+                <input type="password" formControlName="password" placeholder="Minimum 8 caractères"
+                    class="form-control">
+
+                <small class="field-error" *ngIf="
+            f['password'].touched &&
+            f['password'].invalid
+          ">
+                    Le mot de passe doit contenir au moins 8 caractères.
+                </small>
+
+            </div>
+
+
+            <!-- CONFIRMATION -->
+
+            <div class="form-group">
+
+                <label>
+                    Confirmer le mot de passe
+                </label>
+
+                <input type="password" formControlName="password_confirmation"
+                    placeholder="Confirmez votre mot de passe" class="form-control">
+
+                <small class="field-error" *ngIf="
+            f['password_confirmation'].touched &&
+            !passwordsMatch()
+          ">
+                    Les mots de passe ne correspondent pas.
+                </small>
+
+            </div>
+
+
+            <!-- PARRAINAGE -->
+
+            <div class="form-group">
+
+                <label>
+                    Code de parrainage
+                </label>
+
+                <input type="text" formControlName="referral_code" placeholder="Code facultatif"
+                    class="form-control referral-input" [readonly]="!!referralCode">
+
+                <small class="field-help">
+                    Le code est facultatif.
+                </small>
+
+            </div>
+
+
+            <!-- SUBMIT -->
+
+            <button type="submit" class="btn-inscription" [disabled]="loading">
+
+                <span *ngIf="loading" class="spinner"></span>
+
+                <span *ngIf="!loading">
+                    Créer mon compte
+                </span>
+
+                <span *ngIf="loading">
+                    Création en cours...
+                </span>
+
+            </button>
+
+
+        </form>
+
+
+        <!-- =========================================================
+         LOGIN
+    ========================================================== -->
+
+        <div class="login-link">
+
+            Vous avez déjà un compte ?
+
+            <button type="button" (click)="goToLogin()">
+                Se connecter
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
