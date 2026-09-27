@@ -1,0 +1,22 @@
+@media print {
+    body * {
+        visibility: hidden;
+    }
+
+    #releve-imprimable,
+    #releve-imprimable * {
+        visibility: visible;
+    }
+
+    .no-print,
+    app-sidebar,
+    app-header,
+    .nav,
+    nav {
+        display: none !important;
+    }
+
+    #releve-imprimable {
+        display: block !important;
+    }
+}

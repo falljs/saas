@@ -95,11 +95,8 @@ export class DetailBonAchatComponent implements OnInit {
   }
 
   printAchat(achat: any) {
-    this.commandeService.onPrint().subscribe((data) => {
-      window.open(
-        `${environment.apiUrl}/print/bon/achat/numero/${achat.numero}`,
-        '_blank'
-      );
+    this.bonAchatService.onPrint().subscribe(() => {
+      window.open(`${environment.apiUrl}/print/bon/achat/numero/${achat.numero}`, '_blank');
     });
   }
 
@@ -157,4 +154,5 @@ export class DetailBonAchatComponent implements OnInit {
       localStorage.setItem('setting', JSON.stringify(data));
     });
   }
+
 }

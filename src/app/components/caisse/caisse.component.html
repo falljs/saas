@@ -247,7 +247,10 @@
     </div>
 
 
-    <!-- TOTAL BÉNÉFICES -->
+    <!-- =======================================================
+       TOTAL BÉNÉFICES (frais inclus = frais NON déduits)
+       À coller À LA PLACE de l'ancienne carte "TOTAL BÉNÉFICES"
+  ======================================================== -->
     <div class="kpi-item" *ngIf="
       userService.checkPermissionExistence(
         firstRoleName + ' voir total bénéfices Caisse'
@@ -256,11 +259,35 @@
       <div class="kpi-card kpi-card--brand">
 
         <div class="kpi-card__label">
-          Total des bénéfices
+          Total des bénéfices (frais inclus)
         </div>
 
         <div class="kpi-card__value">
           {{ totalBenefice | number:'1.0-0' }} F CFA
+        </div>
+
+      </div>
+    </div>
+
+
+    <!-- =======================================================
+       BÉNÉFICE NET (frais déduits)
+       Même permission que le total des bénéfices,
+       comme dans les impressions PDF.
+  ======================================================== -->
+    <div class="kpi-item" *ngIf="
+      userService.checkPermissionExistence(
+        firstRoleName + ' voir total bénéfices Caisse'
+      )
+    ">
+      <div class="kpi-card" [ngClass]="totalBeneficeNet < 0 ? 'kpi-card--red' : 'kpi-card--green'">
+
+        <div class="kpi-card__label">
+          Bénéfice net (– frais)
+        </div>
+
+        <div class="kpi-card__value">
+          {{ totalBeneficeNet | number:'1.0-0' }} F CFA
         </div>
 
       </div>

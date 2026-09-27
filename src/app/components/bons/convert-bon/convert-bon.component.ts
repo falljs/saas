@@ -120,30 +120,30 @@ export class ConvertBonComponent implements OnInit {
   }
 
   selectClient(client: any) {
+
     this.selectedClient = client;
     this.nom_client = client.name;
+
     this.searchSelect = '';
-    this.showDropdown = false; // Fermer le dropdown après la sélection
+    this.showDropdown = false;
+
     if (this.selectedClient.code) {
+
       this.clientService.getData(this.selectedClient.id).subscribe(
-        data => {
-          let response: any = data;
-          this.listBonClients = response.bons;
-          if (this.userService.checkPermissionExistence(this.firstRoleName + ' voir produit difoncé Stock')) {
-            this.isBon = 'Difoncé';
-            this.listBonClient = this.listBonClients.filter((bon: any) => bon.isBon === 'Difoncé');
-          } else if (this.userService.checkPermissionExistence(this.firstRoleName + ' voir produit sicap Stock')) {
-            this.isBon = 'Sicap';
-            this.listBonClient = this.listBonClients.filter((bon: any) => bon.isBon === 'Sicap');
-          } else if (this.userService.checkPermissionExistence(this.firstRoleName + ' voir produit difoncé Stock') &&
-            this.userService.checkPermissionExistence(this.firstRoleName + ' voir produit sicap Stock')) {
-            this.isBon = 'Difoncé';
-            this.listBonClient = this.listBonClients.filter((bon: any) => bon.isBon === 'Difoncé');
-          }
-        });
-    }
-    else {
+        (data: any) => {
+
+          this.listBonClients = data.bons || [];
+
+          // Afficher tous les bons du client sélectionné
+          this.listBonClient = this.listBonClients;
+
+        }
+      );
+
+    } else {
+
       this.listBonClient = [];
+
     }
   }
 

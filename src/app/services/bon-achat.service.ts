@@ -79,8 +79,12 @@ export class BonAchatService {
     });
   }
 
-  onPrint(): Observable<any> {
+  onPrintOld(): Observable<any> {
     return this.http.get(`${this.url}/print`);
+  }
+
+  onPrint(): Observable<any> {
+    return this.http.get(`${this.url}/bonAchat/print`);
   }
 
   create(data: Object): Observable<Object> {

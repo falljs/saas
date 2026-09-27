@@ -80,8 +80,14 @@
             Règlements
           </a>
         </li>
+        <li class="nav-item">
+          <a href="#tabs-releveFactures" class="nav-link" data-bs-toggle="tab">
+            Releve Factures
+          </a>
+        </li>
         <li class="mx-5" *ngIf="hasPhone && hasImpayes">
-          <button class="btn btn-success btn-sm" (click)="sendWhatsapp()">
+          <button class="btn btn-success btn-sm" (click)="sendWhatsapp()"
+            title="Notifié au client l'ensemble de ces factures non payées">
             <i class="fa fa-whatsapp me-1"></i>
             Relancer WhatsApp
           </button>
@@ -295,57 +301,194 @@
 
               <tbody>
 
-                <tr *ngIf="listReglementsFiltres.length==0">
+                <tr *ngIf="listReglementsFiltres.length === 0">
+
                   <td colspan="6" class="text-center">
                     Aucun règlement trouvé
                   </td>
+
                 </tr>
+
 
                 <tr *ngFor="let reg of listReglementsFiltres">
 
-                  <td>{{reg.created_at | date:'dd/MM/yyyy HH:mm'}}</td>
-
-                  <td>{{ reg.commande?.numero }}</td>
-
+                  <!-- DATE -->
                   <td>
-                    {{reg.restant | number:'1.0-0'}} F CFA
+                    {{ reg.created_at | date:'dd/MM/yyyy HH:mm' }}
                   </td>
 
-                  <td>{{reg.avance | number:'1.0-0'}} F CFA</td>
 
+                  <!-- FACTURE -->
                   <td>
-                    {{reg.reste_affiche | number:'1.0-0'}} F CFA
+                    {{ reg.commande?.numero }}
                   </td>
 
-                  <td>{{reg.auteur}}</td>
+
+                  <!-- MONTANT TOTAL FACTURE -->
+                  <td>
+                    {{ reg.montant_facture | number:'1.0-0' }}
+                    F CFA
+                  </td>
+
+
+                  <!-- VERSEMENT -->
+                  <td>
+                    {{ reg.avance | number:'1.0-0' }}
+                    F CFA
+                  </td>
+
+
+                  <!-- RESTE APRES CE REGLEMENT -->
+                  <td>
+                    {{ reg.reste_affiche | number:'1.0-0' }}
+                    F CFA
+                  </td>
+
+
+                  <!-- AUTEUR -->
+                  <td>
+                    {{ reg.auteur }}
+                  </td>
 
                 </tr>
 
               </tbody>
-              <tfoot>
-                <tr class="fw-bold bg-light">
-                  <td colspan="2" class="text-end">Totaux :</td>
 
+
+              <tfoot>
+
+                <tr class="fw-bold bg-light">
+
+                  <td colspan="2" class="text-end">
+                    Totaux :
+                  </td>
+
+
+                  <!-- TOTAL FACTURES UNIQUES -->
                   <td>
                     {{ totalMontantFacturesReglement | number:'1.0-0' }}
                     F CFA
                   </td>
 
+
+                  <!-- TOTAL VERSEMENTS -->
                   <td>
                     {{ totalVersementsReglement | number:'1.0-0' }}
                     F CFA
                   </td>
 
+
+                  <!-- TOTAL RESTANT DES FACTURES UNIQUES -->
                   <td>
                     {{ totalResteReglement | number:'1.0-0' }}
                     F CFA
                   </td>
 
+
                   <td></td>
+
                 </tr>
+
               </tfoot>
 
             </table>
+
+          </div>
+
+        </div>
+
+        <div class="tab-pane" id="tabs-releveFactures" role="tabpanel">
+
+          <div class="row g-2 align-items-end mb-3 no-print">
+
+            <div class="col-6 col-md-3">
+              <label>Date début</label>
+              <input type="date" class="form-control" [(ngModel)]="releveDateDebut">
+            </div>
+
+            <div class="col-6 col-md-3">
+              <label>Date fin</label>
+              <input type="date" class="form-control" [(ngModel)]="releveDateFin">
+            </div>
+
+            <div class="col-12 col-md-6 d-flex flex-wrap gap-2 justify-content-md-end">
+              <button class="btn btn-primary btn-sm" (click)="chargerReleveFactures()" title="Filtrer">
+                <i class="fa fa-filter mx-2"></i> Filtrer
+              </button>
+              <button class="btn btn-outline-secondary btn-sm" (click)="resetFiltresReleve()"
+                title="Réinitialiser les filtres">
+                <i class="fa fa-rotate-left mx-2"></i> Réinitialiser
+              </button>
+              <!-- <button class="btn btn-outline-dark btn-sm" (click)="imprimerReleve()"
+                title="Impression rapide navigateur">
+                <i class="fa fa-print mx-2"></i> Imprimer
+              </button> -->
+              <button class="btn btn-outline-danger btn-sm" (click)="telechargerReleveFacturesPdf()"
+                title="Télécharger en PDF personnalisé">
+                <i class="fa fa-print mx-2"></i> Imprimer
+              </button>
+              <button class="btn btn-outline-success btn-sm" (click)="envoyerReleveWhatsApp()"
+                title="Envoyer par WhatsApp">
+                <i class="fa fa-whatsapp mx-2"></i> WhatsApp
+              </button>
+            </div>
+
+          </div>
+
+          <div id="releve-imprimable">
+
+            <div class="mb-2">
+              <strong>{{ releveEntite?.name }}</strong><br>
+              <span class="text-muted">
+                {{ releveType === 'client' ? 'Relevé de factures client' : 'Relevé de factures fournisseur' }}
+              </span>
+              <span *ngIf="releveDateDebut || releveDateFin">
+                &nbsp;— du {{ releveDateDebut || '...' }} au {{ releveDateFin || "aujourd'hui" }}
+              </span>
+            </div>
+
+            <div class="table-responsive border" style="height:300px">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>N° Facture</th>
+                    <th>Montant</th>
+                    <th>Réglé</th>
+                    <th>Reste</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  <tr *ngIf="loadingReleve">
+                    <td colspan="5" class="text-center">Chargement...</td>
+                  </tr>
+
+                  <tr *ngIf="!loadingReleve && releveFactures.length === 0">
+                    <td colspan="5" class="text-center text-muted">
+                      Aucune facture pour la période sélectionnée.
+                    </td>
+                  </tr>
+
+                  <tr *ngFor="let f of releveFactures">
+                    <td>{{ f.created_at | date:'dd/MM/yyyy' }}</td>
+                    <td>{{ f.numero }}</td>
+                    <td>{{ f.net | number:'1.0-0' }} F CFA</td>
+                    <td>{{ (f.net - f.restant) | number:'1.0-0' }} F CFA</td>
+                    <td>{{ f.restant | number:'1.0-0' }} F CFA</td>
+                  </tr>
+                </tbody>
+
+                <tfoot *ngIf="releveFactures.length > 0">
+                  <tr class="fw-bold bg-light">
+                    <td colspan="2" class="text-end">Totaux ({{ releveFactures.length }} facture(s)) :</td>
+                    <td>{{ releveTotalMontant | number:'1.0-0' }} F CFA</td>
+                    <td>{{ releveTotalRegle | number:'1.0-0' }} F CFA</td>
+                    <td>{{ releveTotalRestant | number:'1.0-0' }} F CFA</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
 
           </div>
 
@@ -418,6 +561,11 @@
         <li class="nav-item">
           <a href="#tabs-reglementAchat" class="nav-link" data-bs-toggle="tab">
             Règlements
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="#tabs-releveFactures" class="nav-link" data-bs-toggle="tab">
+            Releve Factures
           </a>
         </li>
         <!-- <li class="mx-5" *ngIf="hasPhone && hasImpayes">
@@ -582,6 +730,7 @@
             </div>
           </div>
         </div>
+
         <div class="tab-pane" id="tabs-bonAchat" role="tabpanel">
           <div class="container-fluid table-responsive border mb-3" style="height: 250px;">
             <table class="table card-table table-vcenter text-nowrap datatable">
@@ -623,6 +772,7 @@
             </table>
           </div>
         </div>
+
         <div class="tab-pane" id="tabs-bon" role="tabpanel">
           <div class="container-fluid table-responsive border mb-3" style="height: 250px;">
             <table class="table card-table table-vcenter text-nowrap datatable">
@@ -660,6 +810,7 @@
             </table>
           </div>
         </div>
+
         <div class="tab-pane" id="tabs-reglementAchat">
 
           <div class="row mb-3">
@@ -749,6 +900,104 @@
           </div>
 
         </div>
+
+        <div class="tab-pane" id="tabs-releveFactures" role="tabpanel">
+
+          <div class="row g-2 align-items-end mb-3 no-print">
+
+            <div class="col-6 col-md-3">
+              <label>Date début</label>
+              <input type="date" class="form-control" [(ngModel)]="releveDateDebut">
+            </div>
+
+            <div class="col-6 col-md-3">
+              <label>Date fin</label>
+              <input type="date" class="form-control" [(ngModel)]="releveDateFin">
+            </div>
+
+            <div class="col-12 col-md-6 d-flex flex-wrap gap-2 justify-content-md-end">
+              <button class="btn btn-primary btn-sm" (click)="chargerReleveFactures()" title="Filtrer">
+                <i class="fa fa-filter mx-2"></i> Filtrer
+              </button>
+              <button class="btn btn-outline-secondary btn-sm" (click)="resetFiltresReleve()"
+                title="Réinitialiser les filtres">
+                <i class="fa fa-rotate-left mx-2"></i> Réinitialiser
+              </button>
+              <!-- <button class="btn btn-outline-dark btn-sm" (click)="imprimerReleve()"
+                title="Impression rapide navigateur">
+                <i class="fa fa-print mx-2"></i> Imprimer
+              </button> -->
+              <button class="btn btn-outline-danger btn-sm" (click)="telechargerReleveFacturesPdf()"
+                title="Télécharger en PDF personnalisé">
+                <i class="fa fa-print mx-2"></i> Imprimer
+              </button>
+              <button class="btn btn-outline-success btn-sm" (click)="envoyerReleveWhatsApp()"
+                title="Envoyer par WhatsApp">
+                <i class="fa fa-whatsapp mx-2"></i> WhatsApp
+              </button>
+            </div>
+
+          </div>
+
+          <div id="releve-imprimable">
+
+            <div class="mb-2">
+              <strong>{{ releveEntite?.name }}</strong><br>
+              <span class="text-muted">
+                {{ releveType === 'client' ? 'Relevé de factures client' : 'Relevé de factures fournisseur' }}
+              </span>
+              <span *ngIf="releveDateDebut || releveDateFin">
+                &nbsp;— du {{ releveDateDebut || '...' }} au {{ releveDateFin || "aujourd'hui" }}
+              </span>
+            </div>
+
+            <div class="table-responsive border" style="height:300px">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>N° Facture</th>
+                    <th>Montant</th>
+                    <th>Réglé</th>
+                    <th>Reste</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  <tr *ngIf="loadingReleve">
+                    <td colspan="5" class="text-center">Chargement...</td>
+                  </tr>
+
+                  <tr *ngIf="!loadingReleve && releveFactures.length === 0">
+                    <td colspan="5" class="text-center text-muted">
+                      Aucune facture pour la période sélectionnée.
+                    </td>
+                  </tr>
+
+                  <tr *ngFor="let f of releveFactures">
+                    <td>{{ f.created_at | date:'dd/MM/yyyy' }}</td>
+                    <td>{{ f.numero }}</td>
+                    <td>{{ f.net | number:'1.0-0' }} F CFA</td>
+                    <td>{{ (f.net - f.restant) | number:'1.0-0' }} F CFA</td>
+                    <td>{{ f.restant | number:'1.0-0' }} F CFA</td>
+                  </tr>
+                </tbody>
+
+                <tfoot *ngIf="releveFactures.length > 0">
+                  <tr class="fw-bold bg-light">
+                    <td colspan="2" class="text-end">Totaux ({{ releveFactures.length }} facture(s)) :</td>
+                    <td>{{ releveTotalMontant | number:'1.0-0' }} F CFA</td>
+                    <td>{{ releveTotalRegle | number:'1.0-0' }} F CFA</td>
+                    <td>{{ releveTotalRestant | number:'1.0-0' }} F CFA</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+
+          </div>
+
+        </div>
+
       </div>
 
     </div>

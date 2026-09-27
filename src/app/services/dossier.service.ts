@@ -90,4 +90,19 @@ export class DossierService {
     return this.http.get(`${this.nbrCommDosNonPay}/${id}`);
   }
 
+  /**
+ * =====================================================================
+ * À AJOUTER dans ton DossierService existant (celui qui contient déjà
+ * l'appel whatsapp-rappel), à côté des méthodes du même style.
+ * =====================================================================
+ */
+
+  getReleveFactures(id: number, dateDebut?: string, dateFin?: string): Observable<any> {
+    const body: any = { id };
+    if (dateDebut) { body.date_debut = dateDebut; }
+    if (dateFin) { body.date_fin = dateFin; }
+
+    return this.http.post(`${this.url}/dossier/releve-factures`, body);
+  }
+
 }

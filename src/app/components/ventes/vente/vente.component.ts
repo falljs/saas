@@ -15,7 +15,6 @@ import { LocalStorageService } from 'src/app/services/local-storage.service';
 import { ProduitService } from 'src/app/services/produit.service';
 import { UserService } from 'src/app/services/user.service';
 import { ParametreService } from 'src/app/services/parametre.service';
-
 declare var bootstrap: any;
 
 @Component({
@@ -24,7 +23,6 @@ declare var bootstrap: any;
   styleUrls: ['./vente.component.scss']
 })
 export class VenteComponent implements OnInit {
-
   formDossier!: FormGroup;
   formClient!: FormGroup;
   formCommande!: FormGroup;
@@ -101,7 +99,6 @@ export class VenteComponent implements OnInit {
   searchFamilleValue: string = '';
   searchReferenceValue: string = '';
 
-
   constructor(
     public produitService: ProduitService,
     public ligneCommandeService: LigneCommandeService,
@@ -156,7 +153,6 @@ export class VenteComponent implements OnInit {
       );
     });
   }
-
 
   get fClient() {
     return this.formClient.controls;
@@ -257,7 +253,6 @@ export class VenteComponent implements OnInit {
     }
   }
 
-
   /**
      * Récupération des paramètres du tenant.
      *
@@ -301,14 +296,12 @@ export class VenteComponent implements OnInit {
     });
   }
 
-
   isEmpruntProduitActive(): boolean {
 
     return Number(
       this.parametre?.emprunt_produit_active
     ) === 1;
   }
-
 
   /**
    * Vérifie si un produit peut être sélectionné.
@@ -333,7 +326,6 @@ export class VenteComponent implements OnInit {
     return this.isEmpruntProduitActive() || stock > 0;
   }
 
-
   refreshRoleAndPermissonsUser(): void {
 
     this.userService
@@ -351,7 +343,6 @@ export class VenteComponent implements OnInit {
       });
   }
 
-
   get filteredClient() {
 
     return this.clientService.listClient.filter(client =>
@@ -362,7 +353,6 @@ export class VenteComponent implements OnInit {
         )
     );
   }
-
 
   selectClient(client: any) {
 
@@ -390,7 +380,6 @@ export class VenteComponent implements OnInit {
     }
   }
 
-
   initFormCommande() {
 
     this.formCommande =
@@ -412,7 +401,6 @@ export class VenteComponent implements OnInit {
         ligneCommande: [],
       });
   }
-
 
   dafaForm() {
 
@@ -461,7 +449,6 @@ export class VenteComponent implements OnInit {
       );
   }
 
-
   initFormClient() {
 
     this.formClient = new FormGroup({
@@ -482,7 +469,6 @@ export class VenteComponent implements OnInit {
     });
   }
 
-
   initFormDossier() {
 
     this.formDossier = new FormGroup({
@@ -496,7 +482,6 @@ export class VenteComponent implements OnInit {
       )
     });
   }
-
 
   onSubmitClient() {
 
@@ -541,7 +526,6 @@ export class VenteComponent implements OnInit {
         }
       });
   }
-
 
   /**
    * Chargement de tous les produits.
@@ -620,7 +604,6 @@ export class VenteComponent implements OnInit {
         }
       });
   }
-
 
   /**
    * Cette méthode est conservée pour ne pas casser
@@ -708,7 +691,6 @@ export class VenteComponent implements OnInit {
     this.typeVente =
       selectedValue;
   }
-
 
   /**
    * Vente au détail
@@ -806,7 +788,6 @@ export class VenteComponent implements OnInit {
 
     this.calcul();
   }
-
 
   /**
    * Gestion de la validation de l'alerte.

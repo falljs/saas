@@ -410,6 +410,32 @@
               <div class="card">
                 <div class="card-header bg-light">Information Produit</div>
                 <div class="card-body">
+
+                  <div class="card mt-3">
+                    <div class="card-header bg-light">Photos</div>
+                    <div class="card-body">
+                      <div class="d-flex flex-wrap gap-2 mb-2">
+                        <!-- Photos existantes -->
+                        <div class="position-relative" *ngFor="let photo of photosUp; let i = index">
+                          <img [src]="photo" style="width:80px;height:80px;object-fit:cover;border-radius:6px;">
+                          <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0"
+                            style="padding:0 6px;" (click)="removePhotoUp(i)">×</button>
+                        </div>
+
+                        <!-- Nouvelles photos (aperçu local) -->
+                        <div class="position-relative" *ngFor="let preview of newPhotosUpPreview; let i = index">
+                          <img [src]="preview"
+                            style="width:80px;height:80px;object-fit:cover;border-radius:6px;opacity:0.85;">
+                          <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0"
+                            style="padding:0 6px;" (click)="removeNewPhotoUp(i)">×</button>
+                        </div>
+                      </div>
+
+                      <input type="file" class="form-control" multiple accept="image/*"
+                        (change)="onFilesSelectedUp($event)">
+                    </div>
+                  </div>
+
                   <div class="mb-2">
                     <label class="form-label">Code Produit</label>
                     <input type="text" formControlName="code" class="form-control" placeholder="Code produit" id="code"

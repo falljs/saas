@@ -43,11 +43,19 @@ export class CaisseComponent implements OnInit {
   totalRestant: number = 0;
   totalVersementCmd: number = 0;
   totlaAvanceReglement: number = 0;
-  totalBenefice: number = 0;
   totalRemboursement: number = 0;
   totalDette: number = 0;
   totalWave: number = 0;
   totalCheque: number = 0;
+
+  /*
+   * Bénéfices (issus de donneesCaisse() côté Laravel)
+   *  - totalBenefice    : bénéfice des produits vendus, réductions déduites,
+   *                       frais NON déduits (« frais inclus »)  -> benefice_produits
+   *  - totalBeneficeNet : totalBenefice - frais                  -> benefice_net
+   */
+  totalBenefice: number = 0;
+  totalBeneficeNet: number = 0;
 
   decaissements_sum: number = 0;
   encaissements_sum: number = 0;
@@ -179,6 +187,88 @@ export class CaisseComponent implements OnInit {
     }
   }
 
+  /* =====================================================================
+   * REMISE À ZÉRO + APPLICATION DE LA RÉPONSE
+   * (centralisés : plus de copier-coller dans chaque méthode)
+   * ===================================================================== */
+
+  private resetTotals(): void {
+    this.listCommande = [];
+    this.listeDettePaie = [];
+    this.listVersement = [];
+    this.listEncaissements = [];
+    this.listeRemboursements = [];
+    this.nbrVdus = 0;
+
+    this.totalFrais = 0;
+    this.totalVente = 0;
+    this.totalAvance = 0;
+    this.totalVersementCmd = 0;
+    this.totlaAvanceReglement = 0;
+    this.totalRestant = 0;
+    this.totalRemboursement = 0;
+    this.totalDette = 0;
+    this.totalWave = 0;
+    this.totalCheque = 0;
+
+    this.totalBenefice = 0;
+    this.totalBeneficeNet = 0;
+
+    this.decaissements_sum = 0;
+    this.encaissements_sum = 0;
+
+    this.nbr_cmd = 0;
+    this.nbr_cmd_payee = 0;
+    this.nbr_cmd_encours = 0;
+    this.nbr_cmd_no_payee = 0;
+
+    this.totalVentesEncaissees = 0;
+    this.totalCaisse = 0;
+  }
+
+  /**
+   * Reçoit la réponse de donneesCaisse() (Laravel) et alimente l'écran.
+   */
+  private applyResponse(response: any): void {
+    this.listCommande = response.commandes;
+    this.listeDettePaie = response.listeDettes;
+    this.listVersement = response.reglements;
+    this.listeRemboursements = response.listeRemboursements;
+    this.nbrVdus = this.listCommande.length;
+
+    this.totalFrais = Number(response.frais) || 0;
+    this.totalVente = Number(response.net) || 0;
+    this.totalAvance = Number(response.totalVersementCmd) || 0;
+    this.totalVersementCmd = Number(response.totalVersementCmd) || 0;
+    this.totlaAvanceReglement = Number(response.totlaAvanceReglement) || 0;
+    this.totalRestant = Number(response.restant) || 0;
+    this.totalRemboursement = Number(response.remboursement) || 0;
+    this.totalDette = Number(response.dette) || 0;
+    this.totalWave = Number(response.wave) || 0;
+    this.totalCheque = Number(response.cheque) || 0;
+
+    /* Bénéfices : clés renvoyées par le controller */
+    this.totalBenefice = Number(response.benefice_produits) || 0;   // frais inclus (non déduits)
+    this.totalBeneficeNet = Number(response.benefice_net) || 0;     // frais déduits
+
+    this.caisseActive = response.caisse_active === true;
+
+    this.encaissements_sum = Number(response.encaissements_sum) || 0;
+    this.decaissements_sum = Number(response.decaissements_sum) || 0;
+
+    this.nbr_cmd = Number(response.nbr_cmd) || 0;
+    this.nbr_cmd_payee = Number(response.nbr_cmd_payee) || 0;
+    this.nbr_cmd_encours = Number(response.nbr_cmd_encours) || 0;
+    this.nbr_cmd_no_payee = Number(response.nbr_no_payee) || 0;
+
+    /* Recalcul centralisé */
+    this.calculateCaisse();
+  }
+
+  /* =====================================================================
+   * CHARGEMENTS
+   * ===================================================================== */
+
   getCommandes() {
     this.isToDate = false; // IMPORTANT
     this.isDisable = true;
@@ -189,69 +279,19 @@ export class CaisseComponent implements OnInit {
     this.title = 'vendu';
     this.isSearch = false;
 
-    this.listCommande = [];
-    this.totalFrais = 0;
-    this.listVersement = [];
-    this.listEncaissements = [];
-    this.listeRemboursements = [];
-    this.nbrVdus = 0;
+    this.resetTotals();
 
-    this.totalVente = 0;
-    this.totalAvance = 0;
-    this.totalVersementCmd = 0;
-    this.totlaAvanceReglement = 0;
-    this.totalRestant = 0;
-    this.totalRemboursement = 0;
-    this.totalDette = 0;
-    this.totalWave = 0;
-    this.totalCheque = 0;
-    this.totalBenefice = 0;
-
-    this.decaissements_sum = 0;
-    this.encaissements_sum = 0;
-
-    this.nbr_cmd = 0;
-    this.nbr_cmd_payee = 0;
-    this.nbr_cmd_encours = 0;
-    this.nbr_cmd_no_payee = 0;
-
-    this.commandeService.getCommandes().subscribe(
-      data => {
+    this.commandeService.getCommandes().subscribe({
+      next: (data) => {
         this.isDisable = false;
         this.isClick = false;
-        let response: any = data;
-        this.listCommande = response.commandes;
-        this.listeDettePaie = response.listeDettes;
-        this.totalFrais = response.frais;
-        this.listVersement = response.reglements;
-
-        this.listeRemboursements = response.listeRemboursements;
-        this.nbrVdus = this.listCommande.length;
-
-        this.totalVente = Number(response.net) || 0;
-        this.totalAvance = Number(response.totalVersementCmd) || 0;
-        this.totalVersementCmd = Number(response.totalVersementCmd) || 0;
-        this.totlaAvanceReglement = Number(response.totlaAvanceReglement) || 0;
-        this.totalRestant = Number(response.restant) || 0;
-        this.totalRemboursement = Number(response.remboursement) || 0;
-        this.totalDette = Number(response.dette) || 0;
-        this.totalWave = Number(response.wave) || 0;
-        this.totalCheque = Number(response.cheque) || 0;
-        this.totalBenefice = Number(response.benefice) || 0;
-
-        this.caisseActive = response.caisse_active === true;
-
-        this.encaissements_sum = Number(response.encaissements_sum) || 0;
-        this.decaissements_sum = Number(response.decaissements_sum) || 0;
-
-        this.nbr_cmd = Number(response.nbr_cmd) || 0;
-        this.nbr_cmd_payee = Number(response.nbr_cmd_payee) || 0;
-        this.nbr_cmd_encours = Number(response.nbr_cmd_encours) || 0;
-        this.nbr_cmd_no_payee = Number(response.nbr_no_payee) || 0;
-
-        /* Recalcul centralisé */
-        this.calculateCaisse();
-      });
+        this.applyResponse(data);
+      },
+      error: () => {
+        this.isDisable = false;
+        this.isClick = false;
+      }
+    });
   }
 
   onChangeDate(ctrl: any) {
@@ -260,31 +300,7 @@ export class CaisseComponent implements OnInit {
     this.isToDay = false; this.isAll = false;
     this.isClt = false; this.is2Date = false;
 
-    this.listCommande = [];
-    this.totalFrais = 0;
-    this.listVersement = [];
-    this.listEncaissements = [];
-    this.listeRemboursements = [];
-    this.nbrVdus = 0;
-
-    this.totalVente = 0;
-    this.totalAvance = 0;
-    this.totalVersementCmd = 0;
-    this.totlaAvanceReglement = 0;
-    this.totalRestant = 0;
-    this.totalRemboursement = 0;
-    this.totalDette = 0;
-    this.totalWave = 0;
-    this.totalCheque = 0;
-    this.totalBenefice = 0;
-
-    this.decaissements_sum = 0;
-    this.encaissements_sum = 0;
-
-    this.nbr_cmd = 0;
-    this.nbr_cmd_payee = 0;
-    this.nbr_cmd_encours = 0;
-    this.nbr_cmd_no_payee = 0;
+    this.resetTotals();
 
     if (ctrl.value) {
       let date: any = this.datePipe.transform(ctrl.value, 'dd-MM-yyyy');
@@ -292,39 +308,7 @@ export class CaisseComponent implements OnInit {
 
       this.commandeService.getCommandeByDate(date).subscribe(
         data => {
-          let response: any = data;
-          this.listCommande = response.commandes;
-          this.listeDettePaie = response.listeDettes;
-          this.totalFrais = response.frais;
-          this.listVersement = response.reglements;
-
-          this.listeRemboursements = response.listeRemboursements;
-          this.nbrVdus = this.listCommande.length;
-
-          this.totalVente = Number(response.net) || 0;
-          this.totalAvance = Number(response.totalVersementCmd) || 0;
-          this.totalVersementCmd = Number(response.totalVersementCmd) || 0;
-          this.totlaAvanceReglement = Number(response.totlaAvanceReglement) || 0;
-          this.totalRestant = Number(response.restant) || 0;
-          this.totalRemboursement = Number(response.remboursement) || 0;
-          this.totalDette = Number(response.dette) || 0;
-          this.totalWave = Number(response.wave) || 0;
-          this.totalCheque = Number(response.cheque) || 0;
-          this.totalBenefice = Number(response.benefice) || 0;
-
-          this.caisseActive = response.caisse_active === true;
-
-          this.encaissements_sum = Number(response.encaissements_sum) || 0;
-          this.decaissements_sum = Number(response.decaissements_sum) || 0;
-
-          this.nbr_cmd = Number(response.nbr_cmd) || 0;
-          this.nbr_cmd_payee = Number(response.nbr_cmd_payee) || 0;
-          this.nbr_cmd_encours = Number(response.nbr_cmd_encours) || 0;
-          this.nbr_cmd_no_payee = Number(response.nbr_no_payee) || 0;
-
-          /* Recalcul centralisé */
-          this.calculateCaisse();
-
+          this.applyResponse(data);
         });
     }
   }
@@ -336,65 +320,11 @@ export class CaisseComponent implements OnInit {
     this.isDate = false; this.isAll = false;
     this.title = 'vendu';
 
-    this.listCommande = [];
-    this.totalFrais = 0;
-    this.listVersement = [];
-    this.listEncaissements = [];
-    this.listeRemboursements = [];
-    this.nbrVdus = 0;
-
-    this.totalVente = 0;
-    this.totalAvance = 0;
-    this.totalVersementCmd = 0;
-    this.totlaAvanceReglement = 0;
-    this.totalRestant = 0;
-    this.totalRemboursement = 0;
-    this.totalDette = 0;
-    this.totalWave = 0;
-    this.totalCheque = 0;
-    this.totalBenefice = 0;
-
-    this.decaissements_sum = 0;
-    this.encaissements_sum = 0;
-
-    this.nbr_cmd = 0;
-    this.nbr_cmd_payee = 0;
-    this.nbr_cmd_encours = 0;
-    this.nbr_cmd_no_payee = 0;
+    this.resetTotals();
 
     this.commandeService.getCommandesToDay().subscribe(
       data => {
-        let response: any = data;
-        this.listCommande = response.commandes;
-        this.listeDettePaie = response.listeDettes;
-        this.totalFrais = response.frais;
-        this.listVersement = response.reglements;
-
-        this.listeRemboursements = response.listeRemboursements;
-        this.nbrVdus = this.listCommande.length;
-
-        this.totalVente = Number(response.net) || 0;
-        this.totalAvance = Number(response.totalVersementCmd) || 0;
-        this.totalVersementCmd = Number(response.totalVersementCmd) || 0;
-        this.totlaAvanceReglement = Number(response.totlaAvanceReglement) || 0;
-        this.totalRestant = Number(response.restant) || 0;
-        this.totalRemboursement = Number(response.remboursement) || 0;
-        this.totalDette = Number(response.dette) || 0;
-        this.totalWave = Number(response.wave) || 0;
-        this.totalCheque = Number(response.cheque) || 0;
-        this.totalBenefice = Number(response.benefice) || 0;
-
-        this.caisseActive = response.caisse_active === true;
-
-        this.encaissements_sum = Number(response.encaissements_sum) || 0;
-        this.decaissements_sum = Number(response.decaissements_sum) || 0;
-
-        this.nbr_cmd = Number(response.nbr_cmd) || 0;
-        this.nbr_cmd_payee = Number(response.nbr_cmd_payee) || 0;
-        this.nbr_cmd_encours = Number(response.nbr_cmd_encours) || 0;
-        this.nbr_cmd_no_payee = Number(response.nbr_no_payee) || 0;
-        /* Recalcul centralisé */
-        this.calculateCaisse();
+        this.applyResponse(data);
       });
   }
 
@@ -611,65 +541,12 @@ export class CaisseComponent implements OnInit {
     if (ctrl.value) {
       let date = this.datePipe.transform(ctrl.value, 'dd-MM-yyyy');
       this.date2 = date;
-      this.listCommande = [];
-      this.totalFrais = 0;
-      this.listVersement = [];
-      this.listEncaissements = [];
-      this.listeRemboursements = [];
-      this.nbrVdus = 0;
 
-      this.totalVente = 0;
-      this.totalAvance = 0;
-      this.totalVersementCmd = 0;
-      this.totalRestant = 0;
-      this.totalRemboursement = 0;
-      this.totalDette = 0;
-      this.totalWave = 0;
-      this.totalCheque = 0;
-      this.encaissements_sum = 0;
-      this.decaissements_sum = 0;
-      this.totalBenefice = 0;
-
-      this.nbr_cmd = 0;
-      this.nbr_cmd_payee = 0;
-      this.nbr_cmd_encours = 0;
-      this.nbr_cmd_no_payee = 0;
+      this.resetTotals();
 
       this.commandeService.getCommandeBy2Dates(this.date1, date).subscribe(
         data => {
-
-          let response: any = data;
-          this.listCommande = response.commandes;
-          this.listeDettePaie = response.listeDettes;
-          this.totalFrais = response.frais;
-          this.listVersement = response.reglements;
-
-          this.listeRemboursements = response.listeRemboursements;
-          this.nbrVdus = this.listCommande.length;
-
-          this.totalVente = Number(response.net) || 0;
-          this.totalAvance = Number(response.totalVersementCmd) || 0;
-          this.totalVersementCmd = Number(response.totalVersementCmd) || 0;
-          this.totlaAvanceReglement = Number(response.totlaAvanceReglement) || 0;
-          this.totalRestant = Number(response.restant) || 0;
-          this.totalRemboursement = Number(response.remboursement) || 0;
-          this.totalDette = Number(response.dette) || 0;
-          this.totalWave = Number(response.wave) || 0;
-          this.totalCheque = Number(response.cheque) || 0;
-          this.totalBenefice = Number(response.benefice) || 0;
-
-          this.caisseActive = response.caisse_active === true;
-
-          this.encaissements_sum = Number(response.encaissements_sum) || 0;
-          this.decaissements_sum = Number(response.decaissements_sum) || 0;
-
-          this.nbr_cmd = Number(response.nbr_cmd) || 0;
-          this.nbr_cmd_payee = Number(response.nbr_cmd_payee) || 0;
-          this.nbr_cmd_encours = Number(response.nbr_cmd_encours) || 0;
-          this.nbr_cmd_no_payee = Number(response.nbr_no_payee) || 0;
-
-          /* Recalcul centralisé */
-          this.calculateCaisse();
+          this.applyResponse(data);
         });
     }
   }

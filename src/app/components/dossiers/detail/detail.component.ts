@@ -12,6 +12,7 @@ import { LigneReglementAchatService } from 'src/app/services/ligne-reglement-ach
 import { LigneReglementService } from 'src/app/services/ligne-reglement.service';
 import { LocalStorageService } from 'src/app/services/local-storage.service';
 import { UserService } from 'src/app/services/user.service';
+import { environment } from 'src/environments/environment';
 declare var $: any;
 
 @Component({
@@ -89,6 +90,18 @@ export class DetailComponent implements OnInit {
   dateFinAchat: string = '';
 
 
+  // --- Propriétés Releve ---
+  releveFactures: any[] = [];
+  releveEntite: any = null;
+  releveType: string = '';
+  releveDateDebut: string = '';
+  releveDateFin: string = '';
+  releveTotalMontant: number = 0;
+  releveTotalRegle: number = 0;
+  releveTotalRestant: number = 0;
+  loadingReleve: boolean = false;
+
+
   constructor(public dossierService: DossierService, public userService: UserService,
     public router: Router, public localStorageService: LocalStorageService,
     public toastrService: ToastrService, public commandeService: CommandeService,
@@ -129,113 +142,192 @@ export class DetailComponent implements OnInit {
    */
   private calculerHistoriqueReglements(reglements: any[]): any[] {
 
-    // On travaille du plus ancien au plus récent
-    // pour calculer correctement l'historique.
-    const reglementsTries = [...reglements].sort(
-      (a: any, b: any) =>
-        new Date(a.created_at).getTime() -
-        new Date(b.created_at).getTime()
-    );
+    if (!reglements || reglements.length === 0) {
+      return [];
+    }
 
-    // Nombre de versements déjà effectués par facture
-    const versementsParFacture: { [key: string]: number } = {};
+    // On traite les règlements du plus ancien au plus récent
+    const historique = [...reglements].sort((a: any, b: any) => {
 
-    const resultats = reglementsTries.map((reg: any) => {
+      const dateA = new Date(a.created_at).getTime();
+      const dateB = new Date(b.created_at).getTime();
 
-      const numeroFacture = reg.commande?.numero;
+      if (dateA !== dateB) {
+        return dateA - dateB;
+      }
 
-      const montantInitial = Number(reg.net || 0);
-      const versement = Number(reg.avance || 0);
+      return Number(a.id || 0) - Number(b.id || 0);
+    });
 
-      // Montant restant AVANT ce versement
-      const dejaVerse = versementsParFacture[numeroFacture] || 0;
 
-      const montantFactureAffiche =
-        montantInitial - dejaVerse;
+    // Cumul des versements par facture
+    const cumulsParCommande: { [key: string]: number } = {};
 
-      // Reste APRÈS ce versement
-      const resteAffiche =
-        montantFactureAffiche - versement;
 
-      // Mise à jour du cumul
-      versementsParFacture[numeroFacture] =
-        dejaVerse + versement;
+    const resultat = historique.map((reg: any) => {
+
+      const commande = reg.commande;
+
+      if (!commande) {
+        return {
+          ...reg,
+          montant_facture: 0,
+          reste_affiche: 0
+        };
+      }
+
+
+      const commandeId = String(
+        commande.id ?? reg.commande_id
+      );
+
+
+      // Montant total de la facture
+      const montantFacture =
+        Number(commande.net) ||
+        Number(commande.totttc) ||
+        0;
+
+
+      // Montant de CE règlement
+      const versement =
+        Number(reg.avance) || 0;
+
+
+      // Initialisation
+      if (!cumulsParCommande[commandeId]) {
+        cumulsParCommande[commandeId] = 0;
+      }
+
+
+      // Cumul des paiements de cette facture
+      cumulsParCommande[commandeId] += versement;
+
+
+      // Reste après ce règlement
+      let reste =
+        montantFacture -
+        cumulsParCommande[commandeId];
+
+
+      // Pas de reste négatif
+      reste = Math.max(0, reste);
+
 
       return {
         ...reg,
-        montant_facture_affiche: montantFactureAffiche,
-        reste_affiche: resteAffiche
+
+        montant_facture: montantFacture,
+
+        avance: versement,
+
+        reste_affiche: reste
       };
     });
 
-    // On remet du plus récent au plus ancien
-    return resultats.reverse();
+
+    // Affichage du plus récent au plus ancien
+    resultat.reverse();
+
+
+    return resultat;
   }
 
   getDossier() {
-    if (localStorage.getItem('dossier') != null) {
-      this.dossier = JSON.parse(localStorage.getItem('dossier')!);
-      this.dossierService.getDossier(this.dossier.id).subscribe(
-        data => {
-          let response: any = data;
-          if (response.client) {
-            this.isDossier = 'client';
-            this.listComm = response.cmd;
-            this.listDevis = response.devis;
-            this.listBons = response.bons;
-            this.client = response.client;
-            this.nbrComm = this.listComm?.length;
-            this.nbrDevis = this.listDevis?.length;
-            this.nbrBon = this.listBons?.length;
-            this.totalVente = response.cmd_mt;
-            this.totalDevis = response.devis_mt;
-            this.totalBon = response.bon_mt;
-            this.totalPayer = response.cmd_verse;
-            this.totalRestant = response.cmd_reste;
-            this.beneficeCom = response.cmd_bnf;
-            this.beneficeBon = response.bon_bnf;
 
-            // Correctif temporaire tant que le ReglementController
-            // (client) n'est pas aligné sur le fix du ReglementAchatController.
-            this.listReglements = this.calculerHistoriqueReglements(
-              response.reglements || []
-            );
-
-            this.listReglementsFiltres = [...this.listReglements];
-
-            this.phone = this.client.phone || '';
-            this.hasPhone = this.phone.trim() != '';
-            this.hasImpayes = this.listComm.some((c: any) => c.restant > 0);
-
-          } else {
-            this.isDossier = 'fournisseur';
-            this.listAchats = response.achat;
-            this.listAchats = response.achat;
-            this.listAchatsFiltres = [...this.listAchats];
-            this.listBonAchats = response.bonAchat;
-
-            this.fournisseur = response.fournisseur;
-
-            this.nbrAchat = this.listAchats?.length;
-            this.nbrBonAchat = this.listBonAchats?.length;
-
-            this.totalAchat = response.achat_mt;
-            this.totalBonAchat = response.bonAchat_mt;
-            this.totalPayerAchat = response.achat_verse;
-            this.totalRestantAchat = response.achat_reste;
-
-            // Le backend (ReglementAchatController) renvoie déjà `net`
-            // = solde avant versement et `restant` correct : plus besoin
-            // de recalcul frontend ici, contrairement au client (cf. plus haut).
-            this.listReglementAchats = response.reglementAchats || [];
-            this.listReglementAchatsFiltres = [...this.listReglementAchats];
-
-            this.phone = this.fournisseur.phone || '';
-            this.hasPhone = this.phone.trim() != '';
-            this.hasImpayes = this.listAchats.some((a: any) => a.restant > 0);
-          }
-        });
+    if (localStorage.getItem('dossier') == null) {
+      return;
     }
+
+    this.dossier = JSON.parse(localStorage.getItem('dossier')!);
+
+    this.dossierService.getDossier(this.dossier.id).subscribe(
+      data => {
+
+        const response: any = data;
+
+        // ============================================================
+        // CLIENT
+        // ============================================================
+
+        if (response.client) {
+
+          this.isDossier = 'client';
+
+          this.listComm = response.cmd || [];
+          this.listDevis = response.devis || [];
+          this.listBons = response.bons || [];
+
+          this.client = response.client;
+
+          this.nbrComm = this.listComm.length;
+          this.nbrDevis = this.listDevis.length;
+          this.nbrBon = this.listBons.length;
+
+          this.totalVente = Number(response.cmd_mt) || 0;
+          this.totalDevis = Number(response.devis_mt) || 0;
+          this.totalBon = Number(response.bon_mt) || 0;
+
+          this.totalPayer = Number(response.cmd_verse) || 0;
+          this.totalRestant = Number(response.cmd_reste) || 0;
+
+          this.beneficeCom = Number(response.cmd_bnf) || 0;
+          this.beneficeBon = Number(response.bon_bnf) || 0;
+
+          // Historique des règlements
+          this.listReglements =
+            this.calculerHistoriqueReglements(response.reglements || []);
+
+          this.listReglementsFiltres = [...this.listReglements];
+
+          this.phone = this.client.phone || '';
+          this.hasPhone = this.phone.trim() !== '';
+
+          this.hasImpayes = this.listComm.some(
+            (c: any) => Number(c.restant) > 0
+          );
+
+        }
+
+        // ============================================================
+        // FOURNISSEUR
+        // ============================================================
+
+        else {
+
+          this.isDossier = 'fournisseur';
+
+          this.listAchats = response.achat || [];
+          this.listAchatsFiltres = [...this.listAchats];
+
+          this.listBonAchats = response.bonAchat || [];
+
+          this.fournisseur = response.fournisseur;
+
+          this.nbrAchat = this.listAchats.length;
+          this.nbrBonAchat = this.listBonAchats.length;
+
+          this.totalAchat = Number(response.achat_mt) || 0;
+          this.totalBonAchat = Number(response.bonAchat_mt) || 0;
+
+          this.totalPayerAchat = Number(response.achat_verse) || 0;
+          this.totalRestantAchat = Number(response.achat_reste) || 0;
+
+          this.listReglementAchats =
+            response.reglementAchats || [];
+
+          this.listReglementAchatsFiltres =
+            [...this.listReglementAchats];
+
+          this.phone = this.fournisseur.phone || '';
+          this.hasPhone = this.phone.trim() !== '';
+
+          this.hasImpayes = this.listAchats.some(
+            (a: any) => Number(a.restant) > 0
+          );
+        }
+      }
+    );
   }
 
   editCommande(commande: any) {
@@ -604,15 +696,29 @@ export class DetailComponent implements OnInit {
   }
 
   get totalResteReglement(): number {
-    if (!this.hasFiltresActifs()) {
-      return this.totalRestant;
+
+    const factures = new Map<string, number>();
+
+    for (const reg of this.listReglementsFiltres || []) {
+
+      if (!reg.commande) {
+        continue;
+      }
+
+      const commandeId = String(reg.commande.id);
+
+      if (!factures.has(commandeId)) {
+
+        const reste =
+          Number(reg.commande.restant) ||
+          0;
+
+        factures.set(commandeId, reste);
+      }
     }
-    return this.getUniqueFacturesTotal(
-      this.listReglementsFiltres,
-      'commande',
-      'reste_affiche',
-      'min'
-    );
+
+    return Array.from(factures.values())
+      .reduce((total, reste) => total + reste, 0);
   }
 
   // ---- Fournisseur ----
@@ -757,80 +863,81 @@ export class DetailComponent implements OnInit {
 
   }
 
-  private openPdfInNewTab(
-    pdfWindow: Window,
-    blob: Blob
-  ): void {
+  // --- Méthode à ajouter ---
+  chargerReleveFactures(): void {
+    this.loadingReleve = true;
 
-    const pdfUrl = URL.createObjectURL(blob);
-
-    pdfWindow.location.href = pdfUrl;
-
-    setTimeout(() => {
-      URL.revokeObjectURL(pdfUrl);
-    }, 60000);
-  }
-
-  printFacture(commande: any): void {
-
-    const pdfWindow = window.open('', '_blank');
-
-    if (!pdfWindow) {
-      console.error('La fenêtre d’impression a été bloquée.');
-      return;
-    }
-
-    pdfWindow.document.write(`
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <title>Génération de la facture...</title>
-      </head>
-      <body style="
-        margin:0;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        height:100vh;
-        font-family:Arial,sans-serif;
-      ">
-        <div>
-          <p>Génération de la facture...</p>
-        </div>
-      </body>
-    </html>
-  `);
-
-    this.commandeService
-      .printFacture(commande.numero)
+    this.dossierService
+      .getReleveFactures(this.dossier.id, this.releveDateDebut, this.releveDateFin)
       .subscribe({
-        next: (blob: Blob) => {
-
-          this.openPdfInNewTab(
-            pdfWindow,
-            blob
-          );
-
+        next: (res: any) => {
+          this.releveFactures = res.factures;
+          this.releveEntite = res.entite;
+          this.releveType = res.type;
+          this.releveTotalMontant = res.total_montant;
+          this.releveTotalRegle = res.total_regle;
+          this.releveTotalRestant = res.total_restant;
+          this.loadingReleve = false;
         },
-
-        error: (error) => {
-
-          console.error(
-            'Erreur impression facture :',
-            error
-          );
-
-          pdfWindow.document.body.innerHTML = `
-          <div style="
-            font-family:Arial;
-            text-align:center;
-            margin-top:50px;
-            color:red;
-          ">
-            Impossible de générer la facture.
-          </div>
-        `;
+        error: () => {
+          this.loadingReleve = false;
         }
       });
   }
+
+  // Réinitialise les filtres de dates et recharge
+  resetFiltresReleve(): void {
+    this.releveDateDebut = '';
+    this.releveDateFin = '';
+    this.chargerReleveFactures();
+  }
+
+  // Impression rapide (navigateur, sans dépendance PDF)
+  imprimerReleve(): void {
+    window.print();
+  }
+
+  // PDF personnalisé (logo, charte graphique) généré côté serveur.
+  // S'ouvre dans un nouvel onglet, l'utilisateur peut l'imprimer ou
+  // l'enregistrer depuis la visionneuse PDF du navigateur.
+  telechargerReleveFacturesPdf(): void {
+    if (!this.dossier?.id) { return; }
+
+    let url = `${environment.apiUrl}/dossier/releve-factures-pdf?id=${this.dossier.id}`;
+
+    if (this.releveDateDebut) { url += `&date_debut=${this.releveDateDebut}`; }
+    if (this.releveDateFin) { url += `&date_fin=${this.releveDateFin}`; }
+
+    window.open(url, '_blank');
+  }
+
+  // Bonus : relie directement à l'idée de relance WhatsApp déjà en place.
+  // Envoie le relevé (nb de factures + total) par WhatsApp, avec un message
+  // dont la formulation change selon le type de dossier (client ou
+  // fournisseur), sur le même principe que whatsappRappel().
+  envoyerReleveWhatsApp(): void {
+    if (!this.releveEntite || this.releveFactures.length === 0) { return; }
+
+    let message = `Bonjour ${this.releveEntite.name},\n\n`;
+
+    if (this.releveType === 'client') {
+      message += `Voici le relevé de vos factures chez nous :\n\n`;
+    } else {
+      message += `Voici le relevé de nos factures d'achat auprès de vous :\n\n`;
+    }
+
+    this.releveFactures.forEach((f) => {
+      const date = new Date(f.created_at).toLocaleDateString('fr-FR');
+      message += `• ${f.numero} | ${date} | ${f.net.toLocaleString('fr-FR')} FCFA\n`;
+    });
+
+    message += `\nNombre de factures : ${this.releveFactures.length}\n`;
+    message += `Total : ${this.releveTotalMontant.toLocaleString('fr-FR')} FCFA\n`;
+    message += `Reste à régler : ${this.releveTotalRestant.toLocaleString('fr-FR')} FCFA\n\n`;
+    message += `Merci pour votre confiance.\nDSI Dakar`;
+
+    const url = `https://wa.me/221${this.releveEntite.phone}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
+  }
+
 }

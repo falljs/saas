@@ -29,7 +29,8 @@
             aria-selected="true" role="tab">Dossiers
             clients</a>
         </li>
-        <li class="nav-item" role="presentation">
+        <li class="nav-item" role="presentation"
+          *ngIf="userService.checkPermissionExistence(firstRoleName + ' voir fournisseur CRM')">
           <a href="#tabs-fournisseurs" (click)="changePaneFn()" class="nav-link" data-bs-toggle="tab"
             aria-selected="false" tabindex="-1" role="tab">Dossiers fournisseurs</a>
         </li>

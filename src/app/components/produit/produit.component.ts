@@ -95,6 +95,10 @@ export class ProduitComponent implements OnInit {
 
   parametre: any = null;
 
+  photosUp: any[] = [];       // photos existantes affichées dans le modal
+  newPhotosUp: File[] = [];   // nouvelles photos à uploader
+  newPhotosUpPreview: string[] = []; // aperçu local des nouvelles photos
+
   constructor(private produitService: ProduitService, public userService: UserService,
     public fb: FormBuilder, public toastrService: ToastrService,
     public fournisseurService: FournisseurService, public router: Router,
@@ -681,8 +685,6 @@ export class ProduitComponent implements OnInit {
 
   }
 
-
-
   onFileSelected(event: any) {
     const file = event.target.files[0];
     this.file = file;
@@ -704,7 +706,6 @@ export class ProduitComponent implements OnInit {
       this.isLoading = false;
     }
   }
-
 
   onSubmitFournisseur() {
     this.formFournisseur.value.name = this.newFournisseur;
@@ -769,7 +770,6 @@ export class ProduitComponent implements OnInit {
       auteur: new FormControl(this.userService.name)
     });
   }
-
 
   //init form updated data
   initFormUp() {
@@ -836,6 +836,20 @@ export class ProduitComponent implements OnInit {
       code_fn: new FormControl(p.code_fn),
       reduire: new FormControl(0),
     });
+
+    // Ajout : charger les photos existantes du produit
+    this.photosUp = Array.isArray(p.photo) ? [...p.photo] : [];
+    this.newPhotosUp = [];
+    this.newPhotosUpPreview = [];
+
+    if (p) {
+      this.fournisseurService.getFournisseurByCode(p.code_fn).subscribe(data => {
+        let resp: any = data;
+        this.selectedFournisseurUp = resp.fournisseur;
+        this.selectFournisseurUp(this.selectedFournisseurUp);
+      });
+    }
+
     if (p) {
       this.fournisseurService.getFournisseurByCode(p.code_fn).subscribe(
         data => {
@@ -873,21 +887,31 @@ export class ProduitComponent implements OnInit {
     }
   }
 
-  //methode inventaire
-  inventaire(produit: any) {
-
-    localStorage.removeItem('produitInventaire');
-
-    localStorage.setItem(
-      'produitInventaire',
-      JSON.stringify({
-        id: produit.id
-      })
-    );
-
-    this.router.navigate(['/inventaire']);
+  removePhotoUp(index: number) {
+    this.photosUp.splice(index, 1);
   }
 
+  onFilesSelectedUp(event: any) {
+    const files: File[] = Array.from(event.target.files);
+    this.newPhotosUp.push(...files);
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (e: any) => this.newPhotosUpPreview.push(e.target.result);
+      reader.readAsDataURL(file);
+    });
+  }
+
+  removeNewPhotoUp(index: number) {
+    this.newPhotosUp.splice(index, 1);
+    this.newPhotosUpPreview.splice(index, 1);
+  }
+
+  //methode inventaire
+  inventaire(produit: any) {
+    localStorage.removeItem('produitInventaire')
+    localStorage.setItem('produitInventaire', JSON.stringify(produit));
+    this.router.navigate(['/inventaire']);
+  }
 
   getStockStatus(qty: number, qtyAlert: number): { label: string, class: string, icon: string } {
     if (qty === 0) {
@@ -899,10 +923,20 @@ export class ProduitComponent implements OnInit {
     }
   }
 
-
   onUpdate() {
     this.formUp.value.code_fn = this.selectedFournisseurUp.code;
-    this.produitService.updateProduit(this.formUp.value).subscribe(res => {
+
+    const formData = new FormData();
+    Object.keys(this.formUp.value).forEach(key => {
+      formData.append(key, this.formUp.value[key] ?? '');
+    });
+
+    formData.append('existingPhotos', JSON.stringify(this.photosUp));
+    this.newPhotosUp.forEach(file => {
+      formData.append('photo[]', file);
+    });
+
+    this.produitService.updateProduit(formData).subscribe(res => {
       let produit: any = res;
       if (produit.msg_designation) {
         this.msg_designation = produit.msg_designation;
@@ -912,7 +946,6 @@ export class ProduitComponent implements OnInit {
         $('#modal-product-update').modal('toggle');
         this.toastrService.success('Produit modifié !');
       }
-
     });
   }
 
