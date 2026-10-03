@@ -1,5 +1,7 @@
-import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
+import { DatePipe } from '@angular/common';
+import { Component, OnInit, OnDestroy, HostListener, ViewChild } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
+import { ProduitCreateModalComponent } from '../produit-create-modal/produit-create-modal.component';
 import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { CommandeService } from 'src/app/services/commande.service';
@@ -9,6 +11,7 @@ import { NotificationService } from 'src/app/services/notification.service';
 import { ParametreService } from 'src/app/services/parametre.service';
 import { UserService } from 'src/app/services/user.service';
 import { environment } from 'src/environments/environment';
+
 declare var $: any;
 
 const SIDEBAR_STATE_KEY = 'icn-sidebar-collapsed';
@@ -47,14 +50,16 @@ export class MenuComponent implements OnInit, OnDestroy {
   // Ajoute une entrée ici pour l'exposer dans le menu déroulant —
   // chacune reste filtrée par sa propre permission.
   // ===============================
-  readonly quickActions: { label: string; icon: string; route: string; permission: string }[] = [
+  readonly quickActions: { label: string; icon: string; route?: string; modal?: string; permission: string }[] = [
     { label: 'Nouvelle vente', icon: 'fa-shopping-cart', route: '/vente', permission: 'créer facture et devis Vente' },
     { label: 'Nouvel achat', icon: 'fa-cart-arrow-down', route: '/achat-nouveau', permission: 'créer achat Achat' },
+    { label: 'Produit', icon: 'fa-archive', modal: 'produit', permission: 'créer produit Stock' },
   ];
 
   whatsappUrl = '';
 
   private routerSub?: Subscription;
+  @ViewChild(ProduitCreateModalComponent) produitModal!: ProduitCreateModalComponent;
 
   constructor(
     public commandeService: CommandeService,
@@ -63,7 +68,8 @@ export class MenuComponent implements OnInit, OnDestroy {
     public localStorageService: LocalStorageService,
     public parametreService: ParametreService,
     public notificationService: NotificationService,
-    private networkService: NetworkService
+    private networkService: NetworkService,
+    private datePipe: DatePipe
   ) { }
 
   ngOnInit() {
@@ -107,6 +113,12 @@ export class MenuComponent implements OnInit, OnDestroy {
       });
 
     this.openCurrentMenu();
+  }
+
+  openAction(action: { modal?: string }): void {
+    if (action.modal === 'produit') {
+      this.produitModal.open();
+    }
   }
 
   ngOnDestroy(): void {

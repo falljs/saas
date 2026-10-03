@@ -1,5 +1,6 @@
 import { DatePipe } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
@@ -22,7 +23,10 @@ declare var bootstrap: any;
   templateUrl: './vente.component.html',
   styleUrls: ['./vente.component.scss']
 })
-export class VenteComponent implements OnInit {
+export class VenteComponent implements OnInit, OnDestroy {
+
+  private produitSub?: Subscription;
+
   formDossier!: FormGroup;
   formClient!: FormGroup;
   formCommande!: FormGroup;
@@ -251,6 +255,29 @@ export class VenteComponent implements OnInit {
       this.firstRoleName =
         this.userService.user.roles[0].name;
     }
+
+    this.produitSub = this.produitService.produitCreated$.subscribe(() => this.refreshProduits());
+  }
+
+  ngOnDestroy(): void {
+    this.produitSub?.unsubscribe();
+  }
+
+  /** Recharge la liste après création d'un produit, en gardant les cases cochées */
+  refreshProduits(): void {
+    this.produitService.getAllProduct().subscribe({
+      next: (data: any[]) => {
+        const selectedCodes = new Set<any>(
+          this.ligneCommandeService.listLigneCommande.map((l: LigneCommande) => l.codeProduit)
+        );
+        data.forEach((p: any) => p.isselected = selectedCodes.has(p.code));
+
+        this.produitService.listAllProduits = data;
+        this.produitService.listProduits = data;
+        localStorage.setItem('listProduitsCache', JSON.stringify(data));
+      },
+      error: (error) => console.error('Erreur lors du rafraîchissement des produits :', error)
+    });
   }
 
   /**

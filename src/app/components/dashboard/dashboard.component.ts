@@ -44,7 +44,18 @@ export class DashboardComponent implements OnInit {
   // ---- KPI ----
   commandesDuJour = 0;
   commandesDuJourInvalide = 0;
-  beneficeDuJour = 0;           // facturé
+
+  beneficeDuJour = 0;           // brut (marges des produits vendus)
+  reductionsDuJour = 0;
+  fraisDuJour = 0;
+  beneficeNetDuJour = 0;        // brut - réductions - frais
+
+
+
+  openInfo: string | null = null;
+  toggleInfo(name: string): void {
+    this.openInfo = this.openInfo === name ? null : name;
+  }
 
   // ---- Graphique ----
   startDate = '';
@@ -140,6 +151,15 @@ export class DashboardComponent implements OnInit {
     }
   }
 
+  private applyBenefice(res: any): void {
+    this.beneficeDuJour = Number(res?.total_benefice_produits ?? 0);                 // brut
+    this.reductionsDuJour = Number(res?.total_reductions ?? 0);
+    this.fraisDuJour = Number(res?.total_frais ?? 0);
+
+    // total_benefice_commandes = marges - réductions ; on retire ensuite les frais
+    this.beneficeNetDuJour = Number(res?.total_benefice_commandes ?? 0) - this.fraisDuJour;
+  }
+
   setMode(mode: ProductMode) {
     this.mode = mode;
     this.search = '';
@@ -213,10 +233,7 @@ export class DashboardComponent implements OnInit {
     this.getInfo(date);
 
     this.statistiqueService.getBeneficeByDate(date).subscribe((res: any) => {
-
-      this.beneficeDuJour =
-        Number(res.total_benefice_produits ?? 0);
-
+      this.applyBenefice(res);
     });
 
     // Synchronise la carte "produits les plus vendus"
@@ -259,10 +276,7 @@ export class DashboardComponent implements OnInit {
 
   getBenefice() {
     this.statistiqueService.getBenefice().subscribe((res: any) => {
-
-      this.beneficeDuJour =
-        Number(res.total_benefice_produits ?? 0);
-
+      this.applyBenefice(res);
     });
   }
 

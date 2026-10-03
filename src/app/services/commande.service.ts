@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { environment } from 'src/environments/environment';
 import Swal from 'sweetalert2';
@@ -29,6 +29,17 @@ export class CommandeService {
   private searchByTwoDate = `${this.url}/commande/searchByTwoDate`;
   private commandesToDay = `${this.url}/commande/commandesToDay`;
 
+  // NOUVEAU : routes dédiées à la LISTE des factures (renvoient { commandes: [...] })
+  private facturesAll = `${this.url}/commande/factures`;
+  private facturesToDay = `${this.url}/commande/factures/today`;
+  private facturesByDate = `${this.url}/commande/factures/date`;
+  private facturesByTwoDate = `${this.url}/commande/factures/dates`;
+
+  // NOUVEAU : listes de la caisse paginées côté serveur
+  private caisseReglementsUrl = `${this.url}/commande/caisse/reglements`;
+  private caisseRemboursementsUrl = `${this.url}/commande/caisse/remboursements`;
+  private caisseDettesUrl = `${this.url}/commande/caisse/dettes`;
+
   private nbrCommPayer = `${this.url}/commande/nombreCommandesPayer`;
   private nbrCommEncrs = `${this.url}/commande/nombreCommandesEncours`;
   private nbrCommRest = `${this.url}/commande/nombreCommandesRestant`;
@@ -55,7 +66,7 @@ export class CommandeService {
   private dettes = `${this.url}/commande/dettes`;
   private searchDetteByDate = `${this.url}/commande/searchDetteByDate`;
 
-  listCommande!: any[];
+  listCommande: any[] = [];
   listDette!: any[];
   listDetteBon!: any[];
   commande!: any;
@@ -71,35 +82,32 @@ export class CommandeService {
     public router: Router
   ) { }
 
+  /** Charge la liste des factures du jour et calcule les totaux. */
   getCommandesDay() {
     this.totalVente = 0;
     this.totalAvance = 0;
     this.totalRestant = 0;
 
-    this.getCommandesToDay().subscribe(
-      data => {
-        let response: any = data;
+    this.getFacturesToDay().subscribe({
+      next: data => {
+        const response: any = data;
 
-        this.listCommande = response.commandes;
+        // Accepte { commandes: [...] } ou directement un tableau
+        this.listCommande = Array.isArray(response)
+          ? response
+          : (response?.commandes ?? []);
         this.nbrCmd = this.listCommande.length;
 
-        let totalVente = 0;
-        let totalAvance = 0;
-        let totalRestant = 0;
-
-        for (let i = 0; i < this.nbrCmd; i++) {
-
-          totalVente += this.listCommande[i].net || 0;
-          this.totalVente = totalVente;
-
-          totalAvance += this.listCommande[i].versement || 0;
-          this.totalAvance = totalAvance;
-
-          totalRestant += this.listCommande[i].restant || 0;
-          this.totalRestant = totalRestant;
-        }
+        this.totalVente = this.listCommande.reduce((t: number, c: any) => t + (Number(c.net) || 0), 0);
+        this.totalAvance = this.listCommande.reduce((t: number, c: any) => t + (Number(c.versement) || 0), 0);
+        this.totalRestant = this.listCommande.reduce((t: number, c: any) => t + (Number(c.restant) || 0), 0);
+      },
+      error: err => {
+        console.error('Erreur chargement des commandes du jour :', err);
+        this.listCommande = [];
+        this.nbrCmd = 0;
       }
-    );
+    });
   }
 
   create(data: Object): Observable<Object> {
@@ -138,8 +146,87 @@ export class CommandeService {
     return this.getCommande(id);
   }
 
+  // =====================================================================
+  // CAISSE (renvoient les TOTAUX, pas la liste des commandes)
+  // =====================================================================
+
   getCommandesToDay(): Observable<any> {
     return this.http.get(this.commandesToDay);
+  }
+
+  getCommandes(): Observable<any> {
+    return this.http.get(this.commandes);
+  }
+
+  getCommandeByDate(date: any): Observable<any> {
+    return this.http.get(`${this.searchByDate}/${date}`);
+  }
+
+  getCommandeBy2Dates(date1: any, date2: any): Observable<any> {
+    return this.http.get(`${this.searchByTwoDate}/${date1}/${date2}`);
+  }
+
+  // =====================================================================
+  // LISTE DES FACTURES (renvoient { commandes: [...], totaux: {...} })
+  // =====================================================================
+
+  getFactures(): Observable<any> {
+    return this.http.get(this.facturesAll);
+  }
+
+  getFacturesToDay(): Observable<any> {
+    return this.http.get(this.facturesToDay);
+  }
+
+  getFacturesByDate(date: any): Observable<any> {
+    return this.http.get(`${this.facturesByDate}/${date}`);
+  }
+
+  getFacturesBy2Dates(date1: any, date2: any): Observable<any> {
+    return this.http.get(`${this.facturesByTwoDate}/${date1}/${date2}`);
+  }
+
+  // =====================================================================
+  // LISTES DE LA CAISSE (paginées côté serveur)
+  // date1 / date2 au format dd-MM-yyyy ; absents = tout l'historique
+  // =====================================================================
+
+  private caisseParams(
+    page: number,
+    perPage: number,
+    date1?: string,
+    date2?: string,
+    search?: string
+  ): HttpParams {
+    let params = new HttpParams()
+      .set('page', page)
+      .set('per_page', perPage);
+
+    if (date1 && date2) {
+      params = params.set('date1', date1).set('date2', date2);
+    }
+    if (search) {
+      params = params.set('search', search);
+    }
+    return params;
+  }
+
+  getCaisseReglements(page = 1, perPage = 50, date1?: string, date2?: string, search?: string): Observable<any> {
+    return this.http.get(this.caisseReglementsUrl, {
+      params: this.caisseParams(page, perPage, date1, date2, search)
+    });
+  }
+
+  getCaisseRemboursements(page = 1, perPage = 50, date1?: string, date2?: string, search?: string): Observable<any> {
+    return this.http.get(this.caisseRemboursementsUrl, {
+      params: this.caisseParams(page, perPage, date1, date2, search)
+    });
+  }
+
+  getCaisseDettes(page = 1, perPage = 50, date1?: string, date2?: string): Observable<any> {
+    return this.http.get(this.caisseDettesUrl, {
+      params: this.caisseParams(page, perPage, date1, date2)
+    });
   }
 
   onPrint(): Observable<any> {
@@ -153,10 +240,6 @@ export class CommandeService {
         responseType: 'blob'
       }
     );
-  }
-
-  getCommandes(): Observable<any> {
-    return this.http.get(this.commandes);
   }
 
   getMaxId(): Observable<any> {
@@ -272,7 +355,6 @@ export class CommandeService {
         );
       }
 
-      this.router.navigate(['/commande-detail']);
       this.router.navigate(['/commande-edit']);
     });
   }
@@ -281,16 +363,8 @@ export class CommandeService {
     return this.http.get(`${this.search}/${search}`);
   }
 
-  getCommandeByDate(date: any): Observable<any> {
-    return this.http.get(`${this.searchByDate}/${date}`);
-  }
-
   getCommandeByCodeClient(code: string): Observable<any> {
     return this.http.get(`${this.searchByClient}/${code}`);
-  }
-
-  getCommandeBy2Dates(date1: any, date2: any): Observable<any> {
-    return this.http.get(`${this.searchByTwoDate}/${date1}/${date2}`);
   }
 
   getNbrCommandesPayer(): Observable<any> {

@@ -1,5 +1,6 @@
 import { DatePipe } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
 import { Bon } from 'src/app/models/bon';
@@ -18,7 +19,9 @@ declare var bootstrap: any;
   templateUrl: './create-bon.component.html',
   styleUrls: ['./create-bon.component.scss']
 })
-export class CreateBonComponent implements OnInit {
+export class CreateBonComponent implements OnInit, OnDestroy {
+
+  private produitSub?: Subscription;
 
   formClient!: FormGroup;
   formBon!: FormGroup;
@@ -106,6 +109,29 @@ export class CreateBonComponent implements OnInit {
       // Extraire le nom du premier rôle
       this.firstRoleName = this.userService.user.roles[0].name;
     }
+
+    this.produitSub = this.produitService.produitCreated$.subscribe(() => this.refreshProduits());
+  }
+
+  ngOnDestroy(): void {
+    this.produitSub?.unsubscribe();
+  }
+
+  /** Recharge la liste après création d'un produit, en gardant les cases cochées */
+  refreshProduits(): void {
+    this.produitService.getAllProduct().subscribe({
+      next: (data: any[]) => {
+        const selectedCodes = new Set<any>(
+          this.ligneBonService.listLigneBon.map((l: LigneBon) => l.codeProduit)
+        );
+        data.forEach((p: any) => p.isselected = selectedCodes.has(p.code));
+
+        this.produitService.listAllProduits = data;
+        this.produitService.listProduits = data;
+        localStorage.setItem('listProduitsCache', JSON.stringify(data));
+      },
+      error: (error) => console.error('Erreur lors du rafraîchissement des produits :', error)
+    });
   }
 
   getPasVente(): number {
@@ -420,55 +446,64 @@ export class CreateBonComponent implements OnInit {
   }
 
   onchangeAlert(produit: any) {
-    // push vers Ligne Commande choix
     if (produit.isselected) {
-      // Ouvre le modal manuellement seulement si le produit n'est pas sélectionné
+      // Emprunt désactivé : on refuse tout de suite, sans modal
+      if (!this.isEmpruntProduitActive()) {
+        produit.isselected = false;
+        this.toastrService.error("Stock insuffisant : l'emprunt de produit est désactivé.");
+        return;
+      }
+      localStorage.setItem('produit', JSON.stringify(produit));
       const modal = new bootstrap.Modal(document.getElementById('modalAlertLine'));
       modal.show();
-      localStorage.removeItem('produit');
-      localStorage.setItem('produit', JSON.stringify(produit));
     } else {
       this.deleteLigneBon(produit.code);
     }
   }
 
   submitAlert() {
-    if (localStorage.getItem('produit') != null) {
-      let produit: any = JSON.parse(localStorage.getItem('produit')!);
-      this.onchange(produit);
-      localStorage.removeItem('produit');
-    };
+    const stored = localStorage.getItem('produit');
+    if (!stored) return;
+
+    const produit: any = JSON.parse(stored);
+    localStorage.removeItem('produit');
+
+    if (!this.isEmpruntProduitActive()) {
+      this.toastrService.error("Stock insuffisant : l'emprunt de produit est désactivé.");
+      this.cancelAlert(produit.code);
+      return;
+    }
+
+    // Emprunt confirmé : on ajoute directement la ligne
+    this.ajouterProduit(produit);
   }
 
-  cancelAlert() {
-    if (localStorage.getItem('produit') != null) {
-      let produit: any = JSON.parse(localStorage.getItem('produit')!);
-      for (var i = 0; i < this.produitService.listProduits.length; i++) {
-        if (this.produitService.listProduits[i].code == produit.code) {
-          this.produitService.listProduits[i].isselected = false;
-        }
-      }
-      localStorage.removeItem('produit');
+  cancelAlert(codeProduit?: any) {
+    let code = codeProduit;
+    if (!code) {
+      const stored = localStorage.getItem('produit');
+      if (stored) code = JSON.parse(stored).code;
     }
+    const p = this.produitService.listProduits.find((x: any) => x.code == code);
+    if (p) p.isselected = false;
+    localStorage.removeItem('produit');
   }
 
   // Calcule Totat Ht
   calcul() {
-    let total = 0;
-    if (this.ligneBonService.listLigneBon.length > 0) {
-      for (var i = 0; i < this.ligneBonService.listLigneBon.length; i++) {
-        if (this.ligneBonService.listLigneBon[i].totht) {
-          total += this.ligneBonService.listLigneBon[i].totht;
-          this.totht = total;
-        }
-        this.getTtc();
-      }
-      localStorage.removeItem('listLigneBon');
-      localStorage.setItem('listLigneBon', JSON.stringify(this.ligneBonService.listLigneBon));
+    const lignes: LigneBon[] = this.ligneBonService.listLigneBon;
+
+    if (lignes.length > 0) {
+      this.totht = lignes.reduce(
+        (sum: number, l: LigneBon) => sum + (l.totht || 0),
+        0
+      );
+      this.getTtc();
+      localStorage.setItem('listLigneBon', JSON.stringify(lignes));
     } else {
       this.removeLcmd();
     }
-    return total;
+    return this.totht;
   }
 
   // Calcule Totat TTC
@@ -479,19 +514,19 @@ export class CreateBonComponent implements OnInit {
 
   // Delete Ligne Commande
   deleteLigneBon(code: any) {
-    for (let i = 0; i < this.ligneBonService.listLigneBon.length; ++i) {
-      this.nbrProduit = i;
-      if (this.ligneBonService.listLigneBon[i].codeProduit == code) {
-        this.ligneBonService.listLigneBon.splice(i, 1);
-      }
-    }
-    this.calcul();
+    // Retire toutes les lignes correspondant au produit
+    this.ligneBonService.listLigneBon =
+      this.ligneBonService.listLigneBon.filter((l: LigneBon) => l.codeProduit != code);
 
-    for (var i = 0; i < this.produitService.listProduits.length; i++) {
-      if (this.produitService.listProduits[i].code == code) {
-        this.produitService.listProduits[i].isselected = false;
-      }
+    this.nbrProduit = this.ligneBonService.listLigneBon.length;
+
+    // Décoche le produit dans la liste
+    const produit = this.produitService.listProduits.find((p: any) => p.code == code);
+    if (produit) {
+      produit.isselected = false;
     }
+
+    this.calcul();
   }
 
   openClient() {

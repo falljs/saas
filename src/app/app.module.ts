@@ -87,6 +87,7 @@ import { ServiceWorkerModule } from '@angular/service-worker';
 import { environment } from '../environments/environment';
 import { ReferralComponent } from './components/referral/referral.component';
 import { InscriptionComponent } from './components/inscription/inscription.component';
+import { ProduitCreateModalComponent } from './components/produit-create-modal/produit-create-modal.component';
 
 @NgModule({
   declarations: [
@@ -165,6 +166,7 @@ import { InscriptionComponent } from './components/inscription/inscription.compo
     CorbeilleComponent,
     ReferralComponent,
     InscriptionComponent,
+    ProduitCreateModalComponent,
   ],
   imports: [
     ServiceWorkerModule.register('ngsw-worker.js', {

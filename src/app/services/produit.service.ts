@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
+
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -115,6 +116,9 @@ export class ProduitService {
   listProduitsEntrepot_uns!: any[];
 
   maxId: any;
+
+
+  produitCreated$ = new Subject<void>();
 
   constructor(private http: HttpClient) { }
 

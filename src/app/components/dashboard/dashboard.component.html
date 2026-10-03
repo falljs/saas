@@ -26,8 +26,8 @@
 
     <app-menu-dashboard></app-menu-dashboard>
 
-    <!-- KPI -->
-    <div class="row row-cards mb-3">
+    <!-- KPI (row-deck : toutes les cartes ont la même hauteur) -->
+    <div class="row row-cards row-deck mb-3">
       <div class="col-sm-6 col-lg-3">
         <div class="card">
           <div class="card-body">
@@ -44,28 +44,53 @@
           </div>
         </div>
       </div>
+
+      <!-- Bénéfice : brut et net côte à côte -->
       <div class="col-sm-6 col-lg-3" *ngIf="
     (
       userService.user?.username === 'webmaster' ||
       userService.checkPermissionExistence(firstRoleName + ' voir bénéfice Tableau de bord')
     )
   ">
-        <div class="card">
+        <div class="card profit-card">
           <div class="card-body">
 
-            <div class="text-muted small">
-              Bénéfice du {{ kpiPeriodLabel }}
+            <div class="profit-card__head">
+              <span class="profit-card__title">Bénéfice {{ kpiPeriodLabel }}</span>
+              <button type="button" class="kpi-info no-print" (click)="toggleInfo('net')"
+                title="Voir comment le bénéfice est calculé" aria-label="Voir le détail du calcul">i</button>
             </div>
 
-            <div class="h1 mb-0">
-              <span class="text-green">
-                {{ beneficeDuJour | number:'1.0-0' }}
-              </span>
+            <div class="profit-card__figures">
+              <div class="profit-card__figure">
+                <div class="profit-card__label">Brut</div>
+                <div class="profit-card__value text-green">{{ beneficeDuJour | number:'1.0-0' }}</div>
+              </div>
+              <div class="profit-card__figure">
+                <div class="profit-card__label">Net</div>
+                <div class="profit-card__value" [class.text-danger]="beneficeNetDuJour < 0"
+                  [class.text-green]="beneficeNetDuJour >= 0">
+                  {{ beneficeNetDuJour | number:'1.0-0' }}
+                </div>
+              </div>
             </div>
 
           </div>
+
+          <!-- Détail du calcul (clic pour fermer) -->
+          <div class="kpi-info__panel" *ngIf="openInfo === 'net'" (click)="openInfo = null">
+            <div><span>Marges des produits vendus (brut)</span><b>{{ beneficeDuJour | number:'1.0-0' }}</b></div>
+            <div><span>− Réductions accordées</span><b>{{ reductionsDuJour | number:'1.0-0' }}</b></div>
+            <div><span>− Frais</span><b>{{ fraisDuJour | number:'1.0-0' }}</b></div>
+            <div class="kpi-info__result"><span>= Bénéfice net</span><span>{{ beneficeNetDuJour | number:'1.0-0'
+                }}</span>
+            </div>
+            <small>Marge d'un produit = prix de vente − prix d'achat. Un net négatif signifie que les frais dépassent le
+              bénéfice.</small>
+          </div>
         </div>
       </div>
+
       <div class="col-sm-6 col-lg-3">
         <div class="card">
           <div class="card-body">

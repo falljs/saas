@@ -4,7 +4,6 @@
 
 <div class="sidebar-overlay" [class.show]="mobileMenuOpen" (click)="closeMobileMenu()"></div>
 
-
 <!-- ============================= -->
 <!-- HEADER -->
 <!-- ============================= -->
@@ -46,11 +45,16 @@
 
       <div class="dropdown-menu quick-action-panel">
         <ng-container *ngFor="let action of quickActions">
-          <a *ngIf="userService.checkPermissionExistence(firstRoleName + ' ' + action.permission)"
-            [routerLink]="action.route" class="quick-action-item">
-            <span class="quick-action-item__icon"><i class="fa" [ngClass]="action.icon"></i></span>
-            <span>{{ action.label }}</span>
-          </a>
+          <ng-container *ngIf="userService.checkPermissionExistence(firstRoleName + ' ' + action.permission)">
+            <a *ngIf="!action.modal" [routerLink]="action.route" class="quick-action-item">
+              <span class="quick-action-item__icon"><i class="fa" [ngClass]="action.icon"></i></span>
+              <span>{{ action.label }}</span>
+            </a>
+            <a *ngIf="action.modal" href="javascript:void(0)" (click)="openAction(action)" class="quick-action-item">
+              <span class="quick-action-item__icon"><i class="fa" [ngClass]="action.icon"></i></span>
+              <span>{{ action.label }}</span>
+            </a>
+          </ng-container>
         </ng-container>
       </div>
 
@@ -426,3 +430,5 @@
   </div>
 
 </aside>
+
+<app-produit-create-modal></app-produit-create-modal>

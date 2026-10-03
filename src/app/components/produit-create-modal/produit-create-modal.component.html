@@ -1,0 +1,141 @@
+<div class="modal modal-blur" id="modal-product" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Ajouter un produit</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form [formGroup]="form" (ngSubmit)="onSubmit()" autocomplete="off" novalidate>
+
+                    <div class="mb-2">
+                        <label class="form-label">Designation <span class="text-danger mx-1">*</span></label>
+                        <input type="text" class="form-control" placeholder="Designation" formControlName="designation">
+                        <div *ngIf="f['designation'].touched && f['designation'].invalid" class="alert alert-danger">
+                            <div *ngIf="f['designation'].errors?.['required']">Donner un nom au produit.</div>
+                            <div *ngIf="f['designation'].errors?.['minlength']">Le nom du produit doit être composé d’au
+                                minimum deux caractères.</div>
+                        </div>
+                        <div *ngIf="msg_designation" class="alert alert-danger">{{ msg_designation }}</div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label">Quantité</label>
+                            <input type="number" class="form-control" placeholder="Qty en stock" formControlName="qty">
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label">Quantité Alert</label>
+                            <input type="number" class="form-control" placeholder="Qty alert stock"
+                                formControlName="qtyAlert">
+                        </div>
+                    </div>
+
+                    <div class="row mb-2" *ngIf="f['qty'].value > 0">
+                        <div class="col-md mt-2">
+                            <label class="form-check form-check-inline">
+                                <input type="checkbox" class="form-check-input" [checked]="isChecked"
+                                    (change)="onToggleEntrepot($any($event.target).checked)">
+                                <span class="form-label">Stocker dans un entrepôt</span>
+                            </label>
+                        </div>
+                        <div class="col-md" *ngIf="isChecked">
+                            <label class="form-label">Quantité à stocker dans le dépôt</label>
+                            <input type="number" class="form-control" formControlName="entrepot_1"
+                                (change)="onDepotChange()">
+                            <small class="text-muted">Reste en stock : {{ qtyRestante }}</small>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label">Prix d'achat <span class="text-danger mx-1">*</span></label>
+                            <input type="number" class="form-control" placeholder="Prix d'achat"
+                                formControlName="prix_achat">
+                            <div *ngIf="f['prix_achat'].touched && f['prix_achat'].invalid" class="alert alert-danger">
+                                <div *ngIf="f['prix_achat'].errors?.['required']">Ce champ est obligatoire !</div>
+                                <div *ngIf="f['prix_achat'].errors?.['min']">Le prix d’achat doit être supérieur ou égal
+                                    à 10 FCFA.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label">Prix de vente</label>
+                            <input type="number" class="form-control" placeholder="Prix de vente"
+                                formControlName="prix">
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <label class="form-label">Prix en gros</label>
+                            <input type="number" class="form-control" formControlName="prix_gros">
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <label class="form-label">Prix douzaine</label>
+                            <input type="number" class="form-control" formControlName="prix_douzaine">
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <label class="form-label">Prix carton</label>
+                            <input type="number" class="form-control" formControlName="prix_carton">
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label">Référence</label>
+                            <input type="text" class="form-control" formControlName="ref">
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label">Code barre</label>
+                            <input type="text" class="form-control" formControlName="code_barre">
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label">Catégorie</label>
+                            <input type="text" class="form-control" formControlName="famille">
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label">Marque</label>
+                            <input type="text" class="form-control" formControlName="marque">
+                        </div>
+                    </div>
+
+                    <!-- Fournisseur -->
+                    <div class="mb-2" *ngIf="!newInputFn">
+                        <label class="form-label">Fournisseur</label>
+                        <div class="input-group">
+                            <button type="button" (click)="newInputFn = true" class="btn mx-1"><i
+                                    class="fa fa-plus"></i></button>
+                            <div class="seach-fournisseurs">
+                                <div class="form-select selected" (click)="showDropdown = !showDropdown">
+                                    <span>{{ selectedFournisseur?.name || 'Sélectionner un fournisseur...' }}</span>
+                                </div>
+                                <div class="form-select showlists" *ngIf="showDropdown">
+                                    <input type="text" [(ngModel)]="searchSelect" [ngModelOptions]="{standalone: true}"
+                                        placeholder="Rechercher..." />
+                                    <div class="showlists-item" *ngFor="let fn of filteredFournisseur"
+                                        (click)="selectFournisseur(fn)">
+                                        <span>{{ fn.name }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-2" *ngIf="newInputFn">
+                        <label class="form-label">Fournisseur</label>
+                        <div class="input-group">
+                            <button type="button" class="btn btn-sm btn-danger mx-1"
+                                (click)="newInputFn = false; newFournisseur = ''">
+                                <i class="fa fa-ban"></i></button>
+                            <input type="text" class="form-control" [(ngModel)]="newFournisseur"
+                                [ngModelOptions]="{standalone: true}" placeholder="Nom du Fournisseur">
+                            <button type="button" [disabled]="!newFournisseur" (click)="onSubmitFournisseur()"
+                                class="btn btn-sm btn-success mx-1"><i class="fa fa-check"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="mb-2">
+                        <button type="button" class="btn btn-danger" style="float: left;"
+                            data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn btn-success" style="float: right;"
+                            [disabled]="!form.valid || newInputFn">Enregistrer</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

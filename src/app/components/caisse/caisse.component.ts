@@ -50,9 +50,8 @@ export class CaisseComponent implements OnInit {
 
   /*
    * Bénéfices (issus de donneesCaisse() côté Laravel)
-   *  - totalBenefice    : bénéfice des produits vendus, réductions déduites,
-   *                       frais NON déduits (« frais inclus »)  -> benefice_produits
-   *  - totalBeneficeNet : totalBenefice - frais                  -> benefice_net
+   *  - totalBenefice    : marges des produits - réductions (frais NON déduits) -> benefice_commandes
+   *  - totalBeneficeNet : totalBenefice - frais                                -> benefice_net
    */
   totalBenefice: number = 0;
   totalBeneficeNet: number = 0;
@@ -104,6 +103,15 @@ export class CaisseComponent implements OnInit {
   totalCaisse: number = 0;
   totalVentesEncaissees: number = 0;
 
+  // Pagination serveur des 3 listes
+  perPage = 50;
+  pageReg = 1; totalReg = 0; searchReg = '';
+  pageRemb = 1; totalRemb = 0; searchRemb = '';
+  pageDette = 1; totalDetteList = 0;
+
+  totalBeneficeBrut: number = 0;   // marges des produits vendus
+  totalReductions: number = 0;     // réductions accordées
+
   constructor(public clientService: ClientService, public router: Router, public userService: UserService,
     public commandeService: CommandeService, private datePipe: DatePipe,
     public statistiqueService: StatistiqueService) { }
@@ -119,6 +127,13 @@ export class CaisseComponent implements OnInit {
       // Extraire le nom du premier rôle
       this.firstRoleName = this.userService.user.roles[0].name;
     }
+  }
+
+  // Infobulle ouverte : 'benefice' | 'net' | 'reductions' | null
+  openInfo: string | null = null;
+
+  toggleInfo(name: string): void {
+    this.openInfo = this.openInfo === name ? null : name;
   }
 
   refreshRoleAndPermissonsUser(): void {
@@ -214,6 +229,9 @@ export class CaisseComponent implements OnInit {
     this.totalBenefice = 0;
     this.totalBeneficeNet = 0;
 
+    this.totalBeneficeBrut = 0;
+    this.totalReductions = 0;
+
     this.decaissements_sum = 0;
     this.encaissements_sum = 0;
 
@@ -224,17 +242,32 @@ export class CaisseComponent implements OnInit {
 
     this.totalVentesEncaissees = 0;
     this.totalCaisse = 0;
+
+    this.pageReg = 1; this.totalReg = 0;
+    this.pageRemb = 1; this.totalRemb = 0;
+    this.pageDette = 1; this.totalDetteList = 0;
+  }
+
+  private periodeCourante(): [string | undefined, string | undefined] {
+    if (this.isToDay) {
+      const t = this.datePipe.transform(new Date(), 'dd-MM-yyyy')!;
+      return [t, t];
+    }
+    if (this.isDate) return [this.date, this.date];
+    if (this.is2Date) return [this.date1, this.date2];
+    return [undefined, undefined];            // « Toutes les ventes »
   }
 
   /**
    * Reçoit la réponse de donneesCaisse() (Laravel) et alimente l'écran.
    */
   private applyResponse(response: any): void {
-    this.listCommande = response.commandes;
-    this.listeDettePaie = response.listeDettes;
-    this.listVersement = response.reglements;
-    this.listeRemboursements = response.listeRemboursements;
-    this.nbrVdus = this.listCommande.length;
+    //this.listCommande = response.commandes;
+    //this.listeDettePaie = response.listeDettes;
+    //this.listVersement = response.reglements;
+    //this.listeRemboursements = response.listeRemboursements;
+    //this.nbrVdus = this.listCommande.length;
+    this.nbrVdus = Number(response.nbr_cmd) || 0;
 
     this.totalFrais = Number(response.frais) || 0;
     this.totalVente = Number(response.net) || 0;
@@ -248,8 +281,11 @@ export class CaisseComponent implements OnInit {
     this.totalCheque = Number(response.cheque) || 0;
 
     /* Bénéfices : clés renvoyées par le controller */
-    this.totalBenefice = Number(response.benefice_produits) || 0;   // frais inclus (non déduits)
-    this.totalBeneficeNet = Number(response.benefice_net) || 0;     // frais déduits
+    this.totalBenefice = Number(response.benefice_commandes) || 0;   // réductions déduites, frais non déduits
+    this.totalBeneficeNet = Number(response.benefice_net) || 0;      // réductions et frais déduits
+
+    this.totalBeneficeBrut = Number(response.benefice_brut) || 0;
+    this.totalReductions = Number(response.reductions) || 0;
 
     this.caisseActive = response.caisse_active === true;
 
@@ -263,6 +299,57 @@ export class CaisseComponent implements OnInit {
 
     /* Recalcul centralisé */
     this.calculateCaisse();
+  }
+
+  /** Charge les 3 listes de la période courante (page 1). */
+  private loadListes(): void {
+    this.searchReg = '';
+    this.searchRemb = '';
+    this.loadReglements(1);
+    this.loadRemboursements(1);
+    this.loadDettes(1);
+  }
+
+  loadReglements(page: number): void {
+    const [d1, d2] = this.periodeCourante();
+    this.commandeService
+      .getCaisseReglements(page, this.perPage, d1, d2, this.searchReg.trim())
+      .subscribe({
+        next: (res: any) => {
+          this.listVersement = res?.data ?? [];
+          this.totalReg = res?.total ?? 0;
+          this.pageReg = res?.current_page ?? page;
+        },
+        error: err => console.error('Erreur encaissements :', err)
+      });
+  }
+
+  loadRemboursements(page: number): void {
+    const [d1, d2] = this.periodeCourante();
+    this.commandeService
+      .getCaisseRemboursements(page, this.perPage, d1, d2, this.searchRemb.trim())
+      .subscribe({
+        next: (res: any) => {
+          this.listeRemboursements = res?.data ?? [];
+          this.totalRemb = res?.total ?? 0;
+          this.pageRemb = res?.current_page ?? page;
+        },
+        error: err => console.error('Erreur remboursements :', err)
+      });
+  }
+
+  loadDettes(page: number): void {
+    const [d1, d2] = this.periodeCourante();
+    this.commandeService
+      .getCaisseDettes(page, this.perPage, d1, d2)
+      .subscribe({
+        next: (res: any) => {
+          this.listeDettePaie = res?.data ?? [];
+          this.totalDetteList = res?.total ?? 0;
+          this.pageDette = res?.current_page ?? page;
+        },
+        error: err => console.error('Erreur dettes payées :', err)
+      });
   }
 
   /* =====================================================================
@@ -286,6 +373,7 @@ export class CaisseComponent implements OnInit {
         this.isDisable = false;
         this.isClick = false;
         this.applyResponse(data);
+        this.loadListes();
       },
       error: () => {
         this.isDisable = false;
@@ -309,6 +397,7 @@ export class CaisseComponent implements OnInit {
       this.commandeService.getCommandeByDate(date).subscribe(
         data => {
           this.applyResponse(data);
+          this.loadListes();
         });
     }
   }
@@ -325,6 +414,7 @@ export class CaisseComponent implements OnInit {
     this.commandeService.getCommandesToDay().subscribe(
       data => {
         this.applyResponse(data);
+        this.loadListes();
       });
   }
 
@@ -547,6 +637,7 @@ export class CaisseComponent implements OnInit {
       this.commandeService.getCommandeBy2Dates(this.date1, date).subscribe(
         data => {
           this.applyResponse(data);
+          this.loadListes();
         });
     }
   }

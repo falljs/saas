@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { LigneBon } from '../models/ligne-bon';
 
 @Injectable({
   providedIn: 'root'
@@ -15,7 +16,7 @@ export class LigneBonService {
   private lignebons = `${this.url}/lignebon/lignebons`;
   private lignebon = `${this.url}/lignebon/lignebon`;
 
-  listLigneBon: any = [];
+  listLigneBon: LigneBon[] = [];
 
   constructor(private http: HttpClient) { }
 

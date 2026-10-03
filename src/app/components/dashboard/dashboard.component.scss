@@ -1,12 +1,142 @@
+$brand: #b36453;
+$muted: #667382;
+$line: rgba(0, 0, 0, .08);
+
+/* ---------------------------------------------------------------
+   Graphique : fond blanc, simple liseré (plus de voile rose)
+---------------------------------------------------------------- */
 #chart-mentions {
     position: relative;
-    height: 270px;
+    height: 300px;
     width: 100%;
-    background-color: rgba(179, 100, 83, 0.15);
-    border: 1px solid #b36453;
+    padding: .5rem;
+    background-color: #fff;
+    border: 1px solid $line;
+    border-radius: .6rem;
+}
+
+/* ---------------------------------------------------------------
+   Carte « Bénéfice » : brut et net côte à côte
+---------------------------------------------------------------- */
+.profit-card {
+    position: relative;
+
+    &__head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .5rem;
+        margin-bottom: .6rem;
+    }
+
+    &__title {
+        font-size: .85rem;
+        color: $muted;
+    }
+
+    &__figures {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+
+    &__figure {
+        min-width: 0;
+        padding-right: .9rem;
+
+        &+& {
+            padding-right: 0;
+            padding-left: .9rem;
+            border-left: 1px solid $line;
+        }
+    }
+
+    &__label {
+        font-size: .8rem;
+        color: $muted;
+    }
+
+    &__value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        line-height: 1.25;
+        white-space: nowrap;
+    }
+}
+
+/* Bouton « i » */
+.kpi-info {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 1.35rem;
+    height: 1.35rem;
+    padding: 0;
+    border: 1px solid rgba(0, 0, 0, .22);
+    border-radius: 50%;
+    background: #fff;
+    color: $muted;
+    font: italic 600 .75rem/1 Georgia, 'Times New Roman', serif;
+    cursor: pointer;
+    transition: background-color .15s, border-color .15s, color .15s;
+
+    &:hover,
+    &:focus-visible {
+        background: $brand;
+        border-color: $brand;
+        color: #fff;
+        outline: none;
+    }
+
+    &:focus-visible {
+        box-shadow: 0 0 0 .2rem rgba($brand, .3);
+    }
+}
+
+/* Détail du calcul : flotte au-dessus du contenu, ne déplace pas les autres cartes */
+.kpi-info__panel {
+    position: absolute;
+    top: 100%;
+    left: .5rem;
+    right: .5rem;
+    z-index: 20;
+    margin-top: .35rem;
+    padding: .75rem .9rem;
+    background: #fff;
+    border: 1px solid $line;
+    border-radius: .6rem;
+    box-shadow: 0 .6rem 1.4rem rgba(0, 0, 0, .14);
+    font-size: .82rem;
+    line-height: 1.5;
+    cursor: pointer;
+
+    >div {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    small {
+        display: block;
+        margin-top: .5rem;
+        color: $muted;
+        line-height: 1.4;
+    }
+}
+
+.kpi-info__result {
+    margin-top: .3rem;
+    padding-top: .3rem;
+    border-top: 1px solid $line;
+    font-weight: 700;
 }
 
 @media print {
+
+    .kpi-info,
+    .kpi-info__panel {
+        display: none !important;
+    }
 
     /* Mise en page générale */
     body {

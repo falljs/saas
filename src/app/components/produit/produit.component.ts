@@ -1,5 +1,6 @@
 import { DatePipe, registerLocaleData } from '@angular/common';
-import { Component, LOCALE_ID, OnInit } from '@angular/core';
+import { Component, LOCALE_ID, OnInit, OnDestroy } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import localeFr from '@angular/common/locales/fr';
 import { ToastrService } from 'ngx-toastr';
@@ -26,7 +27,9 @@ import { TDocumentDefinitions, Content, Column, ContentStack, Alignment } from '
   styleUrls: ['./produit.component.scss'],
   providers: [{ provide: LOCALE_ID, useValue: 'fr' }]
 })
-export class ProduitComponent implements OnInit {
+export class ProduitComponent implements OnInit, OnDestroy {
+
+  private produitSub?: Subscription;
 
   page: number = 1;
   nbrProduit: number = 0;
@@ -126,6 +129,15 @@ export class ProduitComponent implements OnInit {
     };
     this.loadParametre();
 
+    this.produitSub = this.produitService.produitCreated$.subscribe(() => {
+      this.getProducts();
+      this.getAllCategories();   // une nouvelle catégorie peut être apparue
+    });
+
+  }
+
+  ngOnDestroy(): void {
+    this.produitSub?.unsubscribe();
   }
 
   loadParametre(): void {

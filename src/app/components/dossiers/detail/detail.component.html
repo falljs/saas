@@ -1,123 +1,159 @@
+<!-- ============================================================
+     CHARGEMENT
+     ============================================================ -->
+<div *ngIf="isDossier == 'none'">
+  <div class="text-center">
+    <div class="spinner-border p-4 mt-5" role="status"></div>
+  </div>
+</div>
+
+
+<!-- ============================================================
+     DOSSIER CLIENT
+     ============================================================ -->
 <div *ngIf="isDossier == 'client'">
 
-  <div class="page-header mb-3 bg-white">
-    <!-- Page pre-title -->
-    <div class="page-title mx-2">
-      <i class="fa fa-arrow-circle-left btn" aria-hidden="true" (click)="routeDossier()"></i>
-      <span class="mx-2 h2 mt-1">Détail Dossier client : {{dossier.nom}} / ce dossier a été
-        créé par <span class="text-nowrap text-uppercase font-weight-bold ">{{dossier.auteur}}</span> le
-        {{dossier.created_at |
-        date:"d-M-y à H:mm"}}</span>
+  <!-- TITRE : une seule ligne -->
+  <div class="d-flex align-items-center gap-2 bg-white border-bottom px-2 py-2 mb-2">
+    <button class="btn btn-icon btn-sm btn-outline-secondary" (click)="routeDossier()" title="Retour aux dossiers">
+      <i class="fa fa-arrow-left"></i>
+    </button>
+
+    <img src="assets/img/detail_folder_open.png" alt="" height="40" class="flex-shrink-0">
+
+    <div class="flex-grow-1 min-w-0">
+      <div class="h3 mb-0 text-truncate">
+        Dossier client : <strong>{{dossier.nom}}</strong>
+      </div>
+      <div class="text-muted small text-truncate">
+        Créé par <span class="text-uppercase fw-bold">{{dossier.auteur}}</span>
+        le {{dossier.created_at | date:"d-M-y à H:mm"}}
+      </div>
+    </div>
+
+    <!-- Résumé visible quand le panneau est replié -->
+    <div class="d-none d-lg-flex align-items-center gap-2" *ngIf="!statsOpen">
+      <span class="badge bg-secondary-lt">{{nbrComm}} factures</span>
+      <span class="badge bg-blue-lt">Ventes {{totalVente | number:'1.0-0'}} F</span>
+      <span class="badge" [ngClass]="totalRestant > 0 ? 'bg-red-lt' : 'bg-green-lt'">
+        Restant {{totalRestant | number:'1.0-0'}} F
+      </span>
+    </div>
+
+    <button class="btn btn-sm btn-outline-secondary" (click)="toggleStats()" [attr.aria-expanded]="statsOpen"
+      title="Afficher / masquer le résumé">
+      <i class="fa" [ngClass]="statsOpen ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+      <span class="d-none d-md-inline ms-1">{{ statsOpen ? 'Masquer' : 'Résumé' }}</span>
+    </button>
+  </div>
+
+  <!-- KPI repliables -->
+  <div class="px-2 mb-2" *ngIf="statsOpen">
+    <div class="row g-2">
+
+      <div class="col-6 col-md">
+        <div class="border rounded bg-white px-3 py-2 h-100">
+          <div class="text-muted small">Factures</div>
+          <div class="h2 mb-0">{{nbrComm}}</div>
+        </div>
+      </div>
+
+      <div class="col-6 col-md">
+        <div class="border rounded bg-white px-3 py-2 h-100">
+          <div class="text-muted small">Total des ventes</div>
+          <div class="h2 mb-0">{{totalVente | number:'1.0-0'}} <small class="text-muted">F CFA</small></div>
+        </div>
+      </div>
+
+      <div class="col-6 col-md">
+        <div class="border rounded bg-white px-3 py-2 h-100">
+          <div class="text-muted small">Total versé</div>
+          <div class="h2 mb-0 text-success">{{totalPayer | number:'1.0-0'}} <small class="text-muted">F CFA</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-6 col-md">
+        <div class="border rounded bg-white px-3 py-2 h-100"
+          [ngClass]="totalRestant > 0 ? 'border-danger' : 'border-success'">
+          <div class="text-muted small">Reste à payer</div>
+          <div class="h2 mb-0" [ngClass]="totalRestant > 0 ? 'text-danger' : 'text-success'">
+            {{totalRestant | number:'1.0-0'}} <small class="text-muted">F CFA</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-6 col-md"
+        *ngIf="dossier.etat == true && (userService.user?.username === 'webmaster' || userService.checkPermissionExistence(firstRoleName + ' benefice Dossier'))">
+        <div class="border rounded bg-white px-3 py-2 h-100">
+          <div class="text-muted small">Bénéfice</div>
+          <div class="h2 mb-0">{{beneficeCom | number:'1.0-0'}} <small class="text-muted">F CFA</small></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Devis / bons : secondaires, uniquement s'il y en a -->
+    <div class="text-muted small mt-2" *ngIf="nbrDevis > 0 || nbrBon > 0">
+      <span *ngIf="nbrDevis > 0" class="me-3">
+        <i class="fa fa-file-text-o me-1"></i>{{nbrDevis}} devis · {{totalDevis | number:'1.0-0'}} F CFA
+      </span>
+      <span *ngIf="nbrBon > 0">
+        <i class="fa fa-list-alt me-1"></i>{{nbrBon}} bon(s) de commande · {{totalBon | number:'1.0-0'}} F CFA
+        <span *ngIf="beneficeBon"> · bénéfice {{beneficeBon | number:'1.0-0'}} F CFA</span>
+      </span>
     </div>
   </div>
 
-  <div class="row mb-3 container-fluid">
-    <div class="col-md-2 border-right border-dark">
-      <img width="100%" class="img-fluid w-75" src="assets/img/detail_folder_open.png" alt="" srcset="">
-    </div>
+  <!-- ONGLETS -->
+  <div class="card mx-2">
+    <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
 
-    <div class="col-md">
-      <div class="mt-2">
-        <div class="h3"> <i class="fa fa-check text-dark"></i> Nombre de factures {{nbrComm}} </div>
-        <div class="h3"> <i class="fa fa-check text-dark"></i> Montant total des ventes {{totalVente | number: '1.0-0'}}
-          F CFA </div>
-        <div class="h3"> <i class="fa fa-check text-dark"></i> Montant total versés {{totalPayer | number: '1.0-0'}} F
-          CFA </div>
-        <div class="h3"> <i class="fa fa-check text-dark"></i> Montant total restants {{totalRestant | number: '1.0-0'}}
-          F CFA </div>
-        <div *ngIf="
-    dossier.etat == true &&
-    (
-      userService.user?.username === 'webmaster' ||
-      userService.checkPermissionExistence(firstRoleName + ' benefice Dossier')
-    )
-  " class="h3">
-          <i class="fa fa-check text-dark"></i>
-          Total bénéfice {{ beneficeCom | number: '1.0-0' }} F CFA
-        </div>
-      </div>
-    </div>
-
-    <div class="col-md">
-      <div class="mt-2">
-        <div class="h3"> <i class="fa fa-check text-dark"></i> Nombre de devis {{nbrDevis}} </div>
-        <div class="h3"> <i class="fa fa-check text-dark"></i> Montant total des devis {{totalDevis | number: '1.0-0'}}
-          F CFA </div>
-      </div>
-    </div>
-
-    <div class="col-md">
-      <div class="mt-2">
-        <div class="h3"> <i class="fa fa-check text-dark"></i> Nombre de bon de commandes {{nbrBon}} </div>
-        <div class="h3"> <i class="fa fa-check text-dark"></i> Montant total des bons {{totalBon | number:
-          '1.0-0'}} F CFA
-        </div>
-        <div class="h3"> <i class="fa fa-check text-dark"></i> Total bénéfice {{beneficeBon | number: '1.0-0'}} F CFA
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  <div class="card">
-    <div class="card-header">
       <ul class="nav nav-tabs card-header-tabs" data-bs-toggle="tabs" role="tablist">
         <li class="nav-item" role="presentation">
-          <a href="#tabs-facture" class="nav-link active" data-bs-toggle="tab" aria-selected="true"
-            role="tab">Factures</a>
-        </li>
-        <li class="nav-item" role="presentation">
-          <a href="#tabs-devis" class="nav-link" data-bs-toggle="tab" aria-selected="false" tabindex="-1"
-            role="tab">Devis</a>
-        </li>
-        <li class="nav-item" role="presentation">
-          <a href="#tabs-bon" class="nav-link" data-bs-toggle="tab" aria-selected="false" tabindex="-1" role="tab">Bon
-            de
-            commande</a>
-        </li>
-        <li class="nav-item">
-          <a href="#tabs-reglement" class="nav-link" data-bs-toggle="tab">
-            Règlements
+          <a href="#tabs-facture" class="nav-link active" data-bs-toggle="tab" aria-selected="true" role="tab">
+            Factures <span class="badge bg-secondary-lt ms-1">{{nbrComm}}</span>
           </a>
         </li>
-        <li class="nav-item">
-          <a href="#tabs-releveFactures" class="nav-link" data-bs-toggle="tab">
-            Releve Factures
+        <li class="nav-item" role="presentation">
+          <a href="#tabs-devis" class="nav-link" data-bs-toggle="tab" aria-selected="false" tabindex="-1" role="tab">
+            Devis <span class="badge bg-secondary-lt ms-1">{{nbrDevis}}</span>
           </a>
         </li>
-        <li class="mx-5" *ngIf="hasPhone && hasImpayes">
-          <button class="btn btn-success btn-sm" (click)="sendWhatsapp()"
-            title="Notifié au client l'ensemble de ces factures non payées">
-            <i class="fa fa-whatsapp me-1"></i>
-            Relancer WhatsApp
-          </button>
+        <li class="nav-item" role="presentation">
+          <a href="#tabs-bon" class="nav-link" data-bs-toggle="tab" aria-selected="false" tabindex="-1" role="tab">
+            Bons de commande <span class="badge bg-secondary-lt ms-1">{{nbrBon}}</span>
+          </a>
         </li>
-        <li class="mx-5" *ngIf="!hasImpayes">
-          <span class="badge bg-success">
-            Toutes les factures sont réglées
-          </span>
+        <li class="nav-item" role="presentation">
+          <a href="#tabs-reglement" class="nav-link" data-bs-toggle="tab" role="tab">Règlements</a>
         </li>
-        <li class="mx-5" *ngIf="!hasPhone">
-
-          <div class="input-group">
-
-            <input class="form-control form-control-sm" [(ngModel)]="phone" placeholder="Numéro WhatsApp">
-
-            <button class="btn btn-primary btn-sm" (click)="updatePhone()">
-
-              Enregistrer
-
-            </button>
-
-          </div>
-
+        <li class="nav-item" role="presentation">
+          <a href="#tabs-releveFactures" class="nav-link" data-bs-toggle="tab" role="tab">Relevé</a>
         </li>
       </ul>
+
+      <!-- Actions à droite -->
+      <div class="d-flex align-items-center gap-2">
+        <span *ngIf="!hasImpayes" class="badge bg-success">Toutes les factures sont réglées</span>
+
+        <button *ngIf="hasPhone && hasImpayes" class="btn btn-success btn-sm" (click)="sendWhatsapp()"
+          title="Notifier le client de l'ensemble de ses factures non payées">
+          <i class="fa fa-whatsapp me-1"></i> Relancer
+        </button>
+
+        <div *ngIf="!hasPhone" class="input-group input-group-sm" style="width: 260px;">
+          <input class="form-control" [(ngModel)]="phone" placeholder="Numéro WhatsApp">
+          <button class="btn btn-primary" (click)="updatePhone()">Enregistrer</button>
+        </div>
+      </div>
     </div>
+
     <div class="card-body">
       <div class="tab-content">
+
+        <!-- ================= FACTURES ================= -->
         <div class="tab-pane active show" id="tabs-facture" role="tabpanel">
-          <div class="container-fluid table-responsive border mb-3" style="height: 250px;">
+          <div class="table-responsive table-scroll border mb-3">
             <table class="table card-table table-vcenter text-nowrap datatable">
               <thead class="thead-dark">
                 <tr>
@@ -125,18 +161,18 @@
                   <th scope="col">Date</th>
                   <th scope="col">Total HT</th>
                   <th scope="col">Total TTC</th>
-                  <th scope="col">Net à Payer </th>
-                  <th scope="col">Versement </th>
-                  <th scope="col">Restant </th>
-                  <th scope="col">Status</th>
+                  <th scope="col">Net à payer</th>
+                  <th scope="col">Versement</th>
+                  <th scope="col">Restant</th>
+                  <th scope="col">Statut</th>
                   <th scope="col">Action</th>
                 </tr>
               </thead>
               <tbody>
                 <tr *ngIf="listComm?.length == 0">
-                  <td class="font-italic text-center" colspan="5">
-                    <marquee behavior="alternate" direction="" class="h3 text-warning"> Aucune commande disponible pour
-                      {{client.name}}...</marquee>
+                  <td colspan="9" class="text-center text-muted py-4">
+                    <i class="fa fa-inbox fa-2x d-block mb-2"></i>
+                    Aucune facture pour {{client.name}}
                   </td>
                 </tr>
                 <tr *ngFor="let commande of listComm">
@@ -150,13 +186,13 @@
                   <td>
                     <span *ngIf="commande.restant == 0" class="badge bg-success me-1">Payé</span>
                     <span *ngIf="commande.versement != 0 && commande.restant != 0" class="badge bg-warning me-1">En
-                      Cours</span>
+                      cours</span>
                     <span *ngIf="commande.versement == 0 && commande.restant != 0" class="badge bg-danger me-1">Non
-                      Payé</span>
+                      payé</span>
                   </td>
                   <td>
-                    <a [hidden]="commande.restant ==0 " (click)="editCommande(commande)"
-                      class="btn btn-sm  btn-outline-warning mx-1"><i class="fa fa-edit"></i></a>
+                    <a [hidden]="commande.restant == 0" (click)="editCommande(commande)"
+                      class="btn btn-sm btn-outline-warning mx-1"><i class="fa fa-edit"></i></a>
                     <a (click)="detailCommande(commande)" class="btn btn-sm btn-outline-primary mx-1"><i
                         class="fa fa-eye"></i></a>
                     <a (click)="printFacture(commande)" class="btn btn-sm btn-outline-primary mx-1"><i
@@ -171,7 +207,7 @@
             *ngIf="dossier.etat == true && userService.checkPermissionExistence(firstRoleName+ ' encaisser Dossier')">
             <div class="row">
               <fieldset class="col-12">
-                <legend>Réglement</legend>
+                <legend>Règlement</legend>
                 <div class="input-group">
                   <span class="input-group-text">Encaissement</span>
                   <input autofocus [disabled]="totalRestant <= 0" (keyup)="onVerser()" [(ngModel)]="verser"
@@ -187,8 +223,10 @@
             </div>
           </div>
         </div>
+
+        <!-- ================= DEVIS ================= -->
         <div class="tab-pane" id="tabs-devis" role="tabpanel">
-          <div class="container-fluid table-responsive border mb-3" style="height: 250px;">
+          <div class="table-responsive table-scroll border mb-3">
             <table class="table card-table table-vcenter text-nowrap datatable">
               <thead class="thead-dark">
                 <tr>
@@ -196,15 +234,15 @@
                   <th scope="col">Date</th>
                   <th scope="col">Total HT</th>
                   <th scope="col">Total TTC</th>
-                  <th scope="col">Net à Payer </th>
+                  <th scope="col">Net à payer</th>
                   <th scope="col">Action</th>
                 </tr>
               </thead>
               <tbody>
                 <tr *ngIf="listDevis?.length == 0">
-                  <td class="font-italic text-center" colspan="5">
-                    <marquee behavior="alternate" direction="" class="h3 text-warning"> Aucun devis disponible pour
-                      {{client.name}}...</marquee>
+                  <td colspan="6" class="text-center text-muted py-4">
+                    <i class="fa fa-inbox fa-2x d-block mb-2"></i>
+                    Aucun devis pour {{client.name}}
                   </td>
                 </tr>
                 <tr *ngFor="let devis of listDevis">
@@ -215,7 +253,7 @@
                   <td>{{devis.net | number: '1.0-0'}} F CFA</td>
                   <td>
                     <a [hidden]="!userService.checkPermissionExistence(firstRoleName+ ' modifier facture et devis Vente')"
-                      (click)="editDevis(devis)" class="btn btn-sm  btn-outline-warning mx-1"><i
+                      (click)="editDevis(devis)" class="btn btn-sm btn-outline-warning mx-1"><i
                         class="fa fa-edit"></i></a>
                     <a (click)="detailDevis(devis)" class="btn btn-sm btn-outline-primary mx-1"><i
                         class="fa fa-eye"></i></a>
@@ -225,8 +263,10 @@
             </table>
           </div>
         </div>
+
+        <!-- ================= BONS DE COMMANDE ================= -->
         <div class="tab-pane" id="tabs-bon" role="tabpanel">
-          <div class="container-fluid table-responsive border mb-3" style="height: 250px;">
+          <div class="table-responsive table-scroll border mb-3">
             <table class="table card-table table-vcenter text-nowrap datatable">
               <thead class="thead-dark">
                 <tr>
@@ -234,15 +274,15 @@
                   <th scope="col">Date</th>
                   <th scope="col">Total HT</th>
                   <th scope="col">Total TTC</th>
-                  <th scope="col">Net à Payer </th>
+                  <th scope="col">Net à payer</th>
                   <th scope="col">Action</th>
                 </tr>
               </thead>
               <tbody>
                 <tr *ngIf="listBons?.length == 0">
-                  <td class="font-italic text-center" colspan="5">
-                    <marquee behavior="alternate" direction="" class="h3 text-warning"> Aucun bon disponible pour
-                      {{client.name}}...</marquee>
+                  <td colspan="6" class="text-center text-muted py-4">
+                    <i class="fa fa-inbox fa-2x d-block mb-2"></i>
+                    Aucun bon de commande pour {{client.name}}
                   </td>
                 </tr>
                 <tr *ngFor="let bon of listBons">
@@ -252,8 +292,8 @@
                   <td>{{bon.totttc | number: '1.0-0'}} F CFA</td>
                   <td>{{bon.net | number: '1.0-0'}} F CFA</td>
                   <td>
-                    <a [hidden]="!userService.checkPermissionExistence(firstRoleName+ ' modifier bon Vente') && bon.restant ==0 "
-                      (click)="editBon(bon)" class="btn btn-sm  btn-outline-warning mx-1"><i class="fa fa-edit"></i></a>
+                    <a [hidden]="!userService.checkPermissionExistence(firstRoleName+ ' modifier bon Vente') && bon.restant == 0"
+                      (click)="editBon(bon)" class="btn btn-sm btn-outline-warning mx-1"><i class="fa fa-edit"></i></a>
                     <a (click)="detailBon(bon)" class="btn btn-sm btn-outline-primary mx-1"><i
                         class="fa fa-eye"></i></a>
                   </td>
@@ -262,156 +302,85 @@
             </table>
           </div>
         </div>
-        <div class="tab-pane" id="tabs-reglement">
 
-          <div class="row mb-3">
+        <!-- ================= RÈGLEMENTS ================= -->
+        <div class="tab-pane" id="tabs-reglement" role="tabpanel">
 
+          <div class="row g-2 mb-3">
             <div class="col-md-3">
               <label>Date début</label>
               <input type="date" class="form-control" [(ngModel)]="dateDebut" (change)="filtrerReglements()">
             </div>
-
             <div class="col-md-3">
               <label>Date fin</label>
               <input type="date" class="form-control" [(ngModel)]="dateFin" (change)="filtrerReglements()">
             </div>
-
             <div class="col-md">
               <label>Numéro de facture</label>
               <input type="text" class="form-control" placeholder="Rechercher par numéro de facture"
                 [(ngModel)]="searchFacture" (input)="filtrerReglements()">
             </div>
-
           </div>
 
-          <div class="table-responsive border" style="height:250px">
-
+          <div class="table-responsive table-scroll border">
             <table class="table table-striped">
-
               <thead>
                 <tr>
                   <th>Date</th>
                   <th>Facture</th>
-                  <th>Montant Facture</th>
+                  <th>Montant facture</th>
                   <th>Versement</th>
                   <th>Reste</th>
                   <th>Auteur</th>
                 </tr>
               </thead>
-
               <tbody>
-
                 <tr *ngIf="listReglementsFiltres.length === 0">
-
-                  <td colspan="6" class="text-center">
-                    Aucun règlement trouvé
-                  </td>
-
+                  <td colspan="6" class="text-center text-muted py-4">Aucun règlement trouvé</td>
                 </tr>
-
-
                 <tr *ngFor="let reg of listReglementsFiltres">
-
-                  <!-- DATE -->
-                  <td>
-                    {{ reg.created_at | date:'dd/MM/yyyy HH:mm' }}
-                  </td>
-
-
-                  <!-- FACTURE -->
-                  <td>
-                    {{ reg.commande?.numero }}
-                  </td>
-
-
-                  <!-- MONTANT TOTAL FACTURE -->
-                  <td>
-                    {{ reg.montant_facture | number:'1.0-0' }}
-                    F CFA
-                  </td>
-
-
-                  <!-- VERSEMENT -->
-                  <td>
-                    {{ reg.avance | number:'1.0-0' }}
-                    F CFA
-                  </td>
-
-
-                  <!-- RESTE APRES CE REGLEMENT -->
-                  <td>
-                    {{ reg.reste_affiche | number:'1.0-0' }}
-                    F CFA
-                  </td>
-
-
-                  <!-- AUTEUR -->
-                  <td>
-                    {{ reg.auteur }}
-                  </td>
-
+                  <td>{{ reg.created_at | date:'dd/MM/yyyy HH:mm' }}</td>
+                  <td>{{ reg.commande?.numero }}</td>
+                  <td>{{ reg.montant_facture | number:'1.0-0' }} F CFA</td>
+                  <td>{{ reg.avance | number:'1.0-0' }} F CFA</td>
+                  <td>{{ reg.reste_affiche | number:'1.0-0' }} F CFA</td>
+                  <td>{{ reg.auteur }}</td>
                 </tr>
-
               </tbody>
-
-
               <tfoot>
-
                 <tr class="fw-bold bg-light">
-
-                  <td colspan="2" class="text-end">
-                    Totaux :
-                  </td>
-
-
-                  <!-- TOTAL FACTURES UNIQUES -->
-                  <td>
-                    {{ totalMontantFacturesReglement | number:'1.0-0' }}
-                    F CFA
-                  </td>
-
-
-                  <!-- TOTAL VERSEMENTS -->
-                  <td>
-                    {{ totalVersementsReglement | number:'1.0-0' }}
-                    F CFA
-                  </td>
-
-
-                  <!-- TOTAL RESTANT DES FACTURES UNIQUES -->
-                  <td>
-                    {{ totalResteReglement | number:'1.0-0' }}
-                    F CFA
-                  </td>
-
-
+                  <td colspan="2" class="text-end">Totaux :</td>
+                  <td>{{ totalMontantFacturesReglement | number:'1.0-0' }} F CFA</td>
+                  <td>{{ totalVersementsReglement | number:'1.0-0' }} F CFA</td>
+                  <td>{{ totalResteReglement | number:'1.0-0' }} F CFA</td>
                   <td></td>
-
                 </tr>
-
               </tfoot>
-
             </table>
-
           </div>
-
         </div>
 
+        <!-- ================= RELEVÉ ================= -->
         <div class="tab-pane" id="tabs-releveFactures" role="tabpanel">
 
           <div class="row g-2 align-items-end mb-3 no-print">
-
-            <div class="col-6 col-md-3">
+            <div class="col-6 col-md-2">
               <label>Date début</label>
               <input type="date" class="form-control" [(ngModel)]="releveDateDebut">
             </div>
-
-            <div class="col-6 col-md-3">
+            <div class="col-6 col-md-2">
               <label>Date fin</label>
               <input type="date" class="form-control" [(ngModel)]="releveDateFin">
             </div>
+            <div class="col-12 col-md-3">
+              <label>Statut</label>
+              <select class="form-select" [(ngModel)]="releveStatut">
+                <option value="non_solde">Non soldées (impayées + en cours)</option>
+                <option value="tous">Toutes les factures</option>
+              </select>
+            </div>
 
-            <div class="col-12 col-md-6 d-flex flex-wrap gap-2 justify-content-md-end">
+            <div class="col-12 col-md-5 d-flex flex-wrap gap-2 justify-content-md-end">
               <button class="btn btn-primary btn-sm" (click)="chargerReleveFactures()" title="Filtrer">
                 <i class="fa fa-filter mx-2"></i> Filtrer
               </button>
@@ -419,10 +388,6 @@
                 title="Réinitialiser les filtres">
                 <i class="fa fa-rotate-left mx-2"></i> Réinitialiser
               </button>
-              <!-- <button class="btn btn-outline-dark btn-sm" (click)="imprimerReleve()"
-                title="Impression rapide navigateur">
-                <i class="fa fa-print mx-2"></i> Imprimer
-              </button> -->
               <button class="btn btn-outline-danger btn-sm" (click)="telechargerReleveFacturesPdf()"
                 title="Télécharger en PDF personnalisé">
                 <i class="fa fa-print mx-2"></i> Imprimer
@@ -432,11 +397,9 @@
                 <i class="fa fa-whatsapp mx-2"></i> WhatsApp
               </button>
             </div>
-
           </div>
 
           <div id="releve-imprimable">
-
             <div class="mb-2">
               <strong>{{ releveEntite?.name }}</strong><br>
               <span class="text-muted">
@@ -445,162 +408,186 @@
               <span *ngIf="releveDateDebut || releveDateFin">
                 &nbsp;— du {{ releveDateDebut || '...' }} au {{ releveDateFin || "aujourd'hui" }}
               </span>
+              <span *ngIf="releveStatut === 'non_solde'" class="badge bg-warning text-dark ms-1">
+                Non soldées uniquement
+              </span>
             </div>
 
-            <div class="table-responsive border" style="height:300px">
+            <div class="table-responsive table-scroll border">
               <table class="table table-striped">
                 <thead>
                   <tr>
                     <th>Date</th>
-                    <th>N° Facture</th>
+                    <th>N° facture</th>
                     <th>Montant</th>
                     <th>Réglé</th>
                     <th>Reste</th>
+                    <th>Statut</th>
                   </tr>
                 </thead>
-
                 <tbody>
                   <tr *ngIf="loadingReleve">
-                    <td colspan="5" class="text-center">Chargement...</td>
+                    <td colspan="6" class="text-center">Chargement...</td>
                   </tr>
-
                   <tr *ngIf="!loadingReleve && releveFactures.length === 0">
-                    <td colspan="5" class="text-center text-muted">
-                      Aucune facture pour la période sélectionnée.
+                    <td colspan="6" class="text-center text-muted py-4">
+                      Aucune facture pour les critères sélectionnés.
                     </td>
                   </tr>
-
                   <tr *ngFor="let f of releveFactures">
                     <td>{{ f.created_at | date:'dd/MM/yyyy' }}</td>
                     <td>{{ f.numero }}</td>
                     <td>{{ f.net | number:'1.0-0' }} F CFA</td>
                     <td>{{ (f.net - f.restant) | number:'1.0-0' }} F CFA</td>
                     <td>{{ f.restant | number:'1.0-0' }} F CFA</td>
+                    <td>
+                      <span *ngIf="f.restant == 0" class="badge bg-success">Payé</span>
+                      <span *ngIf="f.restant > 0 && f.restant < f.net" class="badge bg-warning text-dark">En
+                        cours</span>
+                      <span *ngIf="f.restant == f.net" class="badge bg-danger">Non payé</span>
+                    </td>
                   </tr>
                 </tbody>
-
                 <tfoot *ngIf="releveFactures.length > 0">
                   <tr class="fw-bold bg-light">
                     <td colspan="2" class="text-end">Totaux ({{ releveFactures.length }} facture(s)) :</td>
                     <td>{{ releveTotalMontant | number:'1.0-0' }} F CFA</td>
                     <td>{{ releveTotalRegle | number:'1.0-0' }} F CFA</td>
                     <td>{{ releveTotalRestant | number:'1.0-0' }} F CFA</td>
+                    <td></td>
                   </tr>
                 </tfoot>
               </table>
             </div>
-
           </div>
-
         </div>
+
       </div>
-
     </div>
   </div>
 </div>
 
-<div *ngIf="isDossier == 'none'">
-  <div class="text-center">
-    <div class="spinner-border p-4 mt-5" role="status">
-    </div>
-  </div>
-</div>
 
+<!-- ============================================================
+     DOSSIER FOURNISSEUR
+     ============================================================ -->
 <div *ngIf="isDossier == 'fournisseur'">
 
-  <div class="page-header mb-3 bg-white">
-    <!-- Page pre-title -->
-    <div class="page-title mx-2">
-      <i class="fa fa-arrow-circle-left btn" aria-hidden="true" (click)="routeDossier()"></i>
-      <span class="mx-2 h2 mt-1">Détail Dossier fournisseur : {{dossier.nom}} / ce dossier a été
-        créé par <span class="text-nowrap text-uppercase font-weight-bold ">{{dossier.auteur}}</span> le
-        {{dossier.created_at |
-        date:"d-M-y à H:mm"}}</span>
-    </div>
-  </div>
+  <!-- TITRE -->
+  <div class="d-flex align-items-center gap-2 bg-white border-bottom px-2 py-2 mb-2">
+    <button class="btn btn-icon btn-sm btn-outline-secondary" (click)="routeDossier()" title="Retour aux dossiers">
+      <i class="fa fa-arrow-left"></i>
+    </button>
 
-  <div class="row mb-3 container-fluid">
-    <div class="col-md-2 border-right border-dark">
-      <img width="100%" class="img-fluid w-75" src="assets/img/folder_open_fournisseur.png" alt="" srcset="">
-    </div>
+    <img src="assets/img/folder_open_fournisseur.png" alt="" height="40" class="flex-shrink-0">
 
-    <div class="col-md">
-      <div class="mt-2">
-        <div class="h3"> <i class="fa fa-check text-dark"></i> Nombre de factures {{nbrAchat}} </div>
-        <div class="h3"> <i class="fa fa-check text-dark"></i> Montant total des achats {{totalAchat | number: '1.0-0'}}
-          F CFA </div>
-        <div class="h3"> <i class="fa fa-check text-dark"></i> Montant total versés {{totalPayerAchat | number:
-          '1.0-0'}} F CFA </div>
-        <div class="h3"> <i class="fa fa-check text-dark"></i> Montant total restants {{totalRestantAchat | number:
-          '1.0-0'}} F CFA </div>
+    <div class="flex-grow-1 min-w-0">
+      <div class="h3 mb-0 text-truncate">
+        Dossier fournisseur : <strong>{{dossier.nom}}</strong>
+      </div>
+      <div class="text-muted small text-truncate">
+        Créé par <span class="text-uppercase fw-bold">{{dossier.auteur}}</span>
+        le {{dossier.created_at | date:"d-M-y à H:mm"}}
       </div>
     </div>
 
-    <div class="col-md">
-      <div class="mt-2">
-        <div class="h3"> <i class="fa fa-check text-dark"></i> Nombre de bon d'achats {{nbrBonAchat}} </div>
-        <div class="h3"> <i class="fa fa-check text-dark"></i> Montant total des bons d'achats {{totalBonAchat | number:
-          '1.0-0'}} F CFA
+    <div class="d-none d-lg-flex align-items-center gap-2" *ngIf="!statsOpen">
+      <span class="badge bg-secondary-lt">{{nbrAchat}} factures</span>
+      <span class="badge bg-blue-lt">Achats {{totalAchat | number:'1.0-0'}} F</span>
+      <span class="badge" [ngClass]="totalRestantAchat > 0 ? 'bg-red-lt' : 'bg-green-lt'">
+        Restant {{totalRestantAchat | number:'1.0-0'}} F
+      </span>
+    </div>
+
+    <button class="btn btn-sm btn-outline-secondary" (click)="toggleStats()" [attr.aria-expanded]="statsOpen"
+      title="Afficher / masquer le résumé">
+      <i class="fa" [ngClass]="statsOpen ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+      <span class="d-none d-md-inline ms-1">{{ statsOpen ? 'Masquer' : 'Résumé' }}</span>
+    </button>
+  </div>
+
+  <!-- KPI repliables -->
+  <div class="px-2 mb-2" *ngIf="statsOpen">
+    <div class="row g-2">
+
+      <div class="col-6 col-md">
+        <div class="border rounded bg-white px-3 py-2 h-100">
+          <div class="text-muted small">Factures</div>
+          <div class="h2 mb-0">{{nbrAchat}}</div>
+        </div>
+      </div>
+
+      <div class="col-6 col-md">
+        <div class="border rounded bg-white px-3 py-2 h-100">
+          <div class="text-muted small">Total des achats</div>
+          <div class="h2 mb-0">{{totalAchat | number:'1.0-0'}} <small class="text-muted">F CFA</small></div>
+        </div>
+      </div>
+
+      <div class="col-6 col-md">
+        <div class="border rounded bg-white px-3 py-2 h-100">
+          <div class="text-muted small">Total versé</div>
+          <div class="h2 mb-0 text-success">{{totalPayerAchat | number:'1.0-0'}} <small class="text-muted">F CFA</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-6 col-md">
+        <div class="border rounded bg-white px-3 py-2 h-100"
+          [ngClass]="totalRestantAchat > 0 ? 'border-danger' : 'border-success'">
+          <div class="text-muted small">Reste à payer</div>
+          <div class="h2 mb-0" [ngClass]="totalRestantAchat > 0 ? 'text-danger' : 'text-success'">
+            {{totalRestantAchat | number:'1.0-0'}} <small class="text-muted">F CFA</small>
+          </div>
         </div>
       </div>
     </div>
 
+    <div class="text-muted small mt-2" *ngIf="nbrBonAchat > 0">
+      <i class="fa fa-list-alt me-1"></i>{{nbrBonAchat}} bon(s) d'achat · {{totalBonAchat | number:'1.0-0'}} F CFA
+    </div>
   </div>
 
-  <div class="card">
-    <div class="card-header">
+  <!-- ONGLETS -->
+  <div class="card mx-2">
+    <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
+
       <ul class="nav nav-tabs card-header-tabs" data-bs-toggle="tabs" role="tablist">
         <li class="nav-item" role="presentation">
-          <a href="#tabs-factureAchat" class="nav-link active" data-bs-toggle="tab" aria-selected="true"
-            role="tab">Factures</a>
+          <a href="#tabs-factureAchat" class="nav-link active" data-bs-toggle="tab" aria-selected="true" role="tab">
+            Factures <span class="badge bg-secondary-lt ms-1">{{nbrAchat}}</span>
+          </a>
         </li>
         <li class="nav-item" role="presentation">
-          <a href="#tabs-bonAchat" class="nav-link" data-bs-toggle="tab" aria-selected="false" tabindex="-1"
-            role="tab">Bon d'achat</a>
-        </li>
-        <li class="nav-item">
-          <a href="#tabs-reglementAchat" class="nav-link" data-bs-toggle="tab">
-            Règlements
+          <a href="#tabs-bonAchat" class="nav-link" data-bs-toggle="tab" aria-selected="false" tabindex="-1" role="tab">
+            Bons d'achat <span class="badge bg-secondary-lt ms-1">{{nbrBonAchat}}</span>
           </a>
         </li>
-        <li class="nav-item">
-          <a href="#tabs-releveFactures" class="nav-link" data-bs-toggle="tab">
-            Releve Factures
-          </a>
+        <li class="nav-item" role="presentation">
+          <a href="#tabs-reglementAchat" class="nav-link" data-bs-toggle="tab" role="tab">Règlements</a>
         </li>
-        <!-- <li class="mx-5" *ngIf="hasPhone && hasImpayes">
-          <button class="btn btn-success btn-sm" (click)="sendWhatsapp()">
-            <i class="fa fa-whatsapp me-1"></i>
-            Relancer WhatsApp
-          </button>
-        </li> -->
-        <li class="mx-5" *ngIf="!hasImpayes">
-          <span class="badge bg-success">
-            Toutes les factures sont réglées
-          </span>
-        </li>
-        <li class="mx-5" *ngIf="!hasPhone">
-
-          <div class="input-group">
-
-            <input class="form-control form-control-sm" [(ngModel)]="phone" placeholder="Numéro WhatsApp">
-
-            <button class="btn btn-primary btn-sm" (click)="updatePhone()">
-
-              Enregistrer
-
-            </button>
-
-          </div>
-
+        <li class="nav-item" role="presentation">
+          <a href="#tabs-releveFactures" class="nav-link" data-bs-toggle="tab" role="tab">Relevé</a>
         </li>
       </ul>
+
+      <div class="d-flex align-items-center gap-2">
+        <span *ngIf="!hasImpayes" class="badge bg-success">Toutes les factures sont réglées</span>
+
+        <div *ngIf="!hasPhone" class="input-group input-group-sm" style="width: 260px;">
+          <input class="form-control" [(ngModel)]="phone" placeholder="Numéro WhatsApp">
+          <button class="btn btn-primary" (click)="updatePhone()">Enregistrer</button>
+        </div>
+      </div>
     </div>
+
     <div class="card-body">
       <div class="tab-content">
+
+        <!-- ================= FACTURES D'ACHAT ================= -->
         <div class="tab-pane active show" id="tabs-factureAchat" role="tabpanel">
-          <!-- Barre de recherche -->
-          <div class="row mb-2">
+
+          <div class="row g-2 mb-2">
             <div class="col-md-4">
               <input [(ngModel)]="searchNumeroAchat" (keyup)="filtrerAchats()" name="searchNumeroAchat" type="text"
                 class="form-control" placeholder="Rechercher par n° facture" />
@@ -614,31 +601,31 @@
                 class="form-control" placeholder="Date fin" />
             </div>
           </div>
-          <div class="container-fluid table-responsive border mb-3" style="height: 250px;">
+
+          <div class="table-responsive table-scroll border mb-3">
             <table class="table card-table table-vcenter text-nowrap datatable">
               <thead>
                 <tr>
                   <th>Numéro</th>
                   <th>Date</th>
                   <th>Fournisseur</th>
-                  <th>Total H</th>
-                  <th>Total tt</th>
-                  <th>Net à payer </th>
-                  <th>Versement </th>
-                  <th>Restant </th>
-                  <th>Status</th>
+                  <th>Total HT</th>
+                  <th>Total TTC</th>
+                  <th>Net à payer</th>
+                  <th>Versement</th>
+                  <th>Restant</th>
+                  <th>Statut</th>
                   <th>Action</th>
                 </tr>
               </thead>
               <tbody>
-                <tr *ngIf="this.listAchatsFiltres?.length == 0">
-                  <td class="font-italic text-center" colspan="10">
-                    <marquee behavior="alternate" direction="" class="h3 text-warning">
-                      Aucun achat éffectuée pour le moment...
-                    </marquee>
+                <tr *ngIf="listAchatsFiltres?.length == 0">
+                  <td colspan="10" class="text-center text-muted py-4">
+                    <i class="fa fa-inbox fa-2x d-block mb-2"></i>
+                    Aucun achat effectué pour le moment
                   </td>
                 </tr>
-                <tr *ngFor="let achat of this.listAchatsFiltres">
+                <tr *ngFor="let achat of listAchatsFiltres">
                   <td>{{achat.numero}}</td>
                   <td>{{achat.date_achat}}</td>
                   <td>{{achat.nom_fn}}</td>
@@ -650,9 +637,9 @@
                   <td>
                     <span *ngIf="achat.restant == 0" class="badge bg-success me-1">Payé</span>
                     <span *ngIf="achat.versement != 0 && achat.restant != 0" class="badge bg-warning me-1">En
-                      Cours</span>
+                      cours</span>
                     <span *ngIf="achat.versement == 0 && achat.restant != 0" class="badge bg-danger me-1">Non
-                      Payé</span>
+                      payé</span>
                   </td>
                   <td>
                     <a (click)="detailAchat(achat)" class="btn btn-sm btn-outline-primary mx-1"><i
@@ -671,53 +658,52 @@
                   <td colspan="2"></td>
                 </tr>
               </tfoot>
-
             </table>
-            <div class="container-fluid table-responsive border mb-3 mt-3" *ngIf="listAchatsFiltres.length > 0">
-              <div class="fw-bold px-2 py-1">
-                Règlements liés aux factures filtrées
-              </div>
-              <table class="table card-table table-vcenter text-nowrap datatable">
-                <thead>
-                  <tr>
-                    <th>N° Facture</th>
-                    <th>Date règlement</th>
-                    <th>Montant versé</th>
-                    <th>Auteur</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr *ngIf="reglementAchatsPourFactureFiltrees.length == 0">
-                    <td class="font-italic text-center text-muted" colspan="4">
-                      Aucun règlement pour les factures sélectionnées.
-                    </td>
-                  </tr>
-                  <tr *ngFor="let reg of reglementAchatsPourFactureFiltrees">
-                    <td>{{reg.achat?.numero}}</td>
-                    <td>{{reg.created_at | date: 'dd-MM-yyyy'}}</td>
-                    <td>{{reg.avance | number: '1.0-0'}} F CFA</td>
-                    <td>{{reg.auteur}}</td>
-                  </tr>
-                </tbody>
-                <tfoot *ngIf="reglementAchatsPourFactureFiltrees.length > 0">
-                  <tr class="fw-bold">
-                    <td colspan="2">Total versé :</td>
-                    <td>{{totalVersementPourFactureFiltrees | number: '1.0-0'}} F CFA</td>
-                    <td></td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
+          </div>
+
+          <!-- Règlements liés aux factures filtrées (sorti du bloc de défilement) -->
+          <div class="table-responsive border mb-3" *ngIf="listAchatsFiltres.length > 0">
+            <div class="fw-bold px-2 py-1">Règlements liés aux factures filtrées</div>
+            <table class="table card-table table-vcenter text-nowrap datatable">
+              <thead>
+                <tr>
+                  <th>N° facture</th>
+                  <th>Date règlement</th>
+                  <th>Montant versé</th>
+                  <th>Auteur</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngIf="reglementAchatsPourFactureFiltrees.length == 0">
+                  <td class="text-center text-muted" colspan="4">
+                    Aucun règlement pour les factures sélectionnées.
+                  </td>
+                </tr>
+                <tr *ngFor="let reg of reglementAchatsPourFactureFiltrees">
+                  <td>{{reg.achat?.numero}}</td>
+                  <td>{{reg.created_at | date: 'dd-MM-yyyy'}}</td>
+                  <td>{{reg.avance | number: '1.0-0'}} F CFA</td>
+                  <td>{{reg.auteur}}</td>
+                </tr>
+              </tbody>
+              <tfoot *ngIf="reglementAchatsPourFactureFiltrees.length > 0">
+                <tr class="fw-bold">
+                  <td colspan="2">Total versé :</td>
+                  <td>{{totalVersementPourFactureFiltrees | number: '1.0-0'}} F CFA</td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
           </div>
 
           <div class="card container-fluid mb-2 table-responsive pb-3"
             *ngIf="dossier.etat == true && userService.checkPermissionExistence(firstRoleName+ ' encaisser Dossier')">
             <div class="row">
               <fieldset class="col-12">
-                <legend>Réglement</legend>
+                <legend>Règlement</legend>
                 <div class="input-group">
                   <span class="input-group-text">Encaissement</span>
-                  <input autofocus [disabled]="!(totalAchat- totalPayerAchat)" (keyup)="onVerserAchat()"
+                  <input autofocus [disabled]="!(totalAchat - totalPayerAchat)" (keyup)="onVerserAchat()"
                     [(ngModel)]="verser" name="verser" type="number" class="form-control" />
                   <input readonly [(ngModel)]="monnaie" name="monnaie" type="number" class="form-control bg-light mx-2"
                     placeholder="la monnaie" />
@@ -731,29 +717,29 @@
           </div>
         </div>
 
+        <!-- ================= BONS D'ACHAT ================= -->
         <div class="tab-pane" id="tabs-bonAchat" role="tabpanel">
-          <div class="container-fluid table-responsive border mb-3" style="height: 250px;">
+          <div class="table-responsive table-scroll border mb-3">
             <table class="table card-table table-vcenter text-nowrap datatable">
               <thead>
                 <tr>
                   <th>Numéro</th>
                   <th>Date</th>
                   <th>Fournisseur</th>
-                  <th>Total H</th>
-                  <th>Total tt</th>
-                  <th>Net à payer </th>
+                  <th>Total HT</th>
+                  <th>Total TTC</th>
+                  <th>Net à payer</th>
                   <th>Action</th>
                 </tr>
               </thead>
               <tbody>
-                <tr *ngIf="this.listBonAchats?.length == 0">
-                  <td class="font-italic text-center" colspan="8">
-                    <marquee behavior="alternate" direction="" class="h3 text-warning">
-                      Aucun bon d'achat éffectuée pour le moment...
-                    </marquee>
+                <tr *ngIf="listBonAchats?.length == 0">
+                  <td colspan="7" class="text-center text-muted py-4">
+                    <i class="fa fa-inbox fa-2x d-block mb-2"></i>
+                    Aucun bon d'achat pour le moment
                   </td>
                 </tr>
-                <tr *ngFor="let achat of this.listBonAchats">
+                <tr *ngFor="let achat of listBonAchats">
                   <td>{{achat.numero}}</td>
                   <td>{{achat.date_achat}}</td>
                   <td>{{achat.nom_fn}}</td>
@@ -773,149 +759,84 @@
           </div>
         </div>
 
-        <div class="tab-pane" id="tabs-bon" role="tabpanel">
-          <div class="container-fluid table-responsive border mb-3" style="height: 250px;">
-            <table class="table card-table table-vcenter text-nowrap datatable">
-              <thead class="thead-dark">
-                <tr>
-                  <th scope="col">Numéro</th>
-                  <th scope="col">Date</th>
-                  <th scope="col">Total HT</th>
-                  <th scope="col">Total TTC</th>
-                  <th scope="col">Net à Payer </th>
-                  <th scope="col">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngIf="listBons?.length == 0">
-                  <td class="font-italic text-center" colspan="5">
-                    <marquee behavior="alternate" direction="" class="h3 text-warning"> Aucun bon disponible pour
-                      {{client.name}}...</marquee>
-                  </td>
-                </tr>
-                <tr *ngFor="let bon of listBons">
-                  <td>{{bon.numero}}</td>
-                  <td>{{bon.created_at | date:"d-MM-y à H:mm"}}</td>
-                  <td>{{bon.totht | number: '1.0-0'}} F CFA</td>
-                  <td>{{bon.totttc | number: '1.0-0'}} F CFA</td>
-                  <td>{{bon.net | number: '1.0-0'}} F CFA</td>
-                  <td>
-                    <a [hidden]="!userService.checkPermissionExistence(firstRoleName+ ' modifier bon Vente') && bon.restant ==0 "
-                      (click)="editBon(bon)" class="btn btn-sm  btn-outline-warning mx-1"><i class="fa fa-edit"></i></a>
-                    <a (click)="detailBon(bon)" class="btn btn-sm btn-outline-primary mx-1"><i
-                        class="fa fa-eye"></i></a>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <!-- ================= RÈGLEMENTS ================= -->
+        <div class="tab-pane" id="tabs-reglementAchat" role="tabpanel">
 
-        <div class="tab-pane" id="tabs-reglementAchat">
-
-          <div class="row mb-3">
-
+          <div class="row g-2 mb-3">
             <div class="col-md-3">
               <label>Date début</label>
               <input type="date" class="form-control" [(ngModel)]="dateDebut" (change)="filtrerReglementAchats()">
             </div>
-
             <div class="col-md-3">
               <label>Date fin</label>
               <input type="date" class="form-control" [(ngModel)]="dateFin" (change)="filtrerReglementAchats()">
             </div>
-
             <div class="col-md">
               <label>Numéro de facture</label>
               <input type="text" class="form-control" placeholder="Rechercher une facture..."
                 [(ngModel)]="searchFacture" (input)="filtrerReglementAchats()">
             </div>
-
           </div>
 
-          <div class="table-responsive border" style="height:250px">
-
+          <div class="table-responsive table-scroll border">
             <table class="table table-striped">
-
               <thead>
                 <tr>
                   <th>Date</th>
                   <th>Facture</th>
-                  <th>Montant Facture</th>
+                  <th>Montant facture</th>
                   <th>Versement</th>
                   <th>Reste</th>
                   <th>Auteur</th>
                 </tr>
               </thead>
-
               <tbody>
-
                 <tr *ngIf="listReglementAchatsFiltres.length == 0">
-                  <td colspan="6" class="text-center">
-                    Aucun règlement trouvé
-                  </td>
+                  <td colspan="6" class="text-center text-muted py-4">Aucun règlement trouvé</td>
                 </tr>
-
                 <tr *ngFor="let reg of listReglementAchatsFiltres">
-
                   <td>{{reg.created_at | date:'dd/MM/yyyy HH:mm'}}</td>
                   <td>{{ reg.achat?.numero }}</td>
-                  <td>
-                    {{reg.net | number:'1.0-0'}} F CFA
-                  </td>
+                  <td>{{reg.net | number:'1.0-0'}} F CFA</td>
                   <td>{{reg.avance | number:'1.0-0'}} F CFA</td>
-                  <td>
-                    {{reg.restant | number:'1.0-0'}} F CFA
-                  </td>
+                  <td>{{reg.restant | number:'1.0-0'}} F CFA</td>
                   <td>{{reg.auteur}}</td>
-
                 </tr>
-
               </tbody>
               <tfoot>
                 <tr class="fw-bold bg-light">
                   <td colspan="2" class="text-end">Totaux :</td>
-
-                  <td>
-                    {{ totalMontantFacturesReglementAchats | number:'1.0-0' }}
-                    F CFA
-                  </td>
-
-                  <td>
-                    {{ totalVersementsReglementAchats | number:'1.0-0' }}
-                    F CFA
-                  </td>
-
-                  <td>
-                    {{ totalResteReglementAchats | number:'1.0-0' }}
-                    F CFA
-                  </td>
-
+                  <td>{{ totalMontantFacturesReglementAchats | number:'1.0-0' }} F CFA</td>
+                  <td>{{ totalVersementsReglementAchats | number:'1.0-0' }} F CFA</td>
+                  <td>{{ totalResteReglementAchats | number:'1.0-0' }} F CFA</td>
                   <td></td>
                 </tr>
               </tfoot>
-
             </table>
-
           </div>
-
         </div>
 
+        <!-- ================= RELEVÉ ================= -->
         <div class="tab-pane" id="tabs-releveFactures" role="tabpanel">
 
           <div class="row g-2 align-items-end mb-3 no-print">
-
-            <div class="col-6 col-md-3">
+            <div class="col-6 col-md-2">
               <label>Date début</label>
               <input type="date" class="form-control" [(ngModel)]="releveDateDebut">
             </div>
-
-            <div class="col-6 col-md-3">
+            <div class="col-6 col-md-2">
               <label>Date fin</label>
               <input type="date" class="form-control" [(ngModel)]="releveDateFin">
             </div>
+            <div class="col-12 col-md-3">
+              <label>Statut</label>
+              <select class="form-select" [(ngModel)]="releveStatut">
+                <option value="non_solde">Non soldées (impayées + en cours)</option>
+                <option value="tous">Toutes les factures</option>
+              </select>
+            </div>
 
-            <div class="col-12 col-md-6 d-flex flex-wrap gap-2 justify-content-md-end">
+            <div class="col-12 col-md-5 d-flex flex-wrap gap-2 justify-content-md-end">
               <button class="btn btn-primary btn-sm" (click)="chargerReleveFactures()" title="Filtrer">
                 <i class="fa fa-filter mx-2"></i> Filtrer
               </button>
@@ -923,10 +844,6 @@
                 title="Réinitialiser les filtres">
                 <i class="fa fa-rotate-left mx-2"></i> Réinitialiser
               </button>
-              <!-- <button class="btn btn-outline-dark btn-sm" (click)="imprimerReleve()"
-                title="Impression rapide navigateur">
-                <i class="fa fa-print mx-2"></i> Imprimer
-              </button> -->
               <button class="btn btn-outline-danger btn-sm" (click)="telechargerReleveFacturesPdf()"
                 title="Télécharger en PDF personnalisé">
                 <i class="fa fa-print mx-2"></i> Imprimer
@@ -936,11 +853,9 @@
                 <i class="fa fa-whatsapp mx-2"></i> WhatsApp
               </button>
             </div>
-
           </div>
 
           <div id="releve-imprimable">
-
             <div class="mb-2">
               <strong>{{ releveEntite?.name }}</strong><br>
               <span class="text-muted">
@@ -949,57 +864,61 @@
               <span *ngIf="releveDateDebut || releveDateFin">
                 &nbsp;— du {{ releveDateDebut || '...' }} au {{ releveDateFin || "aujourd'hui" }}
               </span>
+              <span *ngIf="releveStatut === 'non_solde'" class="badge bg-warning text-dark ms-1">
+                Non soldées uniquement
+              </span>
             </div>
 
-            <div class="table-responsive border" style="height:300px">
+            <div class="table-responsive table-scroll border">
               <table class="table table-striped">
                 <thead>
                   <tr>
                     <th>Date</th>
-                    <th>N° Facture</th>
+                    <th>N° facture</th>
                     <th>Montant</th>
                     <th>Réglé</th>
                     <th>Reste</th>
+                    <th>Statut</th>
                   </tr>
                 </thead>
-
                 <tbody>
                   <tr *ngIf="loadingReleve">
-                    <td colspan="5" class="text-center">Chargement...</td>
+                    <td colspan="6" class="text-center">Chargement...</td>
                   </tr>
-
                   <tr *ngIf="!loadingReleve && releveFactures.length === 0">
-                    <td colspan="5" class="text-center text-muted">
-                      Aucune facture pour la période sélectionnée.
+                    <td colspan="6" class="text-center text-muted py-4">
+                      Aucune facture pour les critères sélectionnés.
                     </td>
                   </tr>
-
                   <tr *ngFor="let f of releveFactures">
                     <td>{{ f.created_at | date:'dd/MM/yyyy' }}</td>
                     <td>{{ f.numero }}</td>
                     <td>{{ f.net | number:'1.0-0' }} F CFA</td>
                     <td>{{ (f.net - f.restant) | number:'1.0-0' }} F CFA</td>
                     <td>{{ f.restant | number:'1.0-0' }} F CFA</td>
+                    <td>
+                      <span *ngIf="f.restant == 0" class="badge bg-success">Payé</span>
+                      <span *ngIf="f.restant > 0 && f.restant < f.net" class="badge bg-warning text-dark">En
+                        cours</span>
+                      <span *ngIf="f.restant == f.net" class="badge bg-danger">Non payé</span>
+                    </td>
                   </tr>
                 </tbody>
-
                 <tfoot *ngIf="releveFactures.length > 0">
                   <tr class="fw-bold bg-light">
                     <td colspan="2" class="text-end">Totaux ({{ releveFactures.length }} facture(s)) :</td>
                     <td>{{ releveTotalMontant | number:'1.0-0' }} F CFA</td>
                     <td>{{ releveTotalRegle | number:'1.0-0' }} F CFA</td>
                     <td>{{ releveTotalRestant | number:'1.0-0' }} F CFA</td>
+                    <td></td>
                   </tr>
                 </tfoot>
               </table>
             </div>
-
           </div>
-
         </div>
 
       </div>
-
     </div>
   </div>
 </div>

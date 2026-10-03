@@ -96,11 +96,11 @@ export class DossierService {
  * l'appel whatsapp-rappel), à côté des méthodes du même style.
  * =====================================================================
  */
-
-  getReleveFactures(id: number, dateDebut?: string, dateFin?: string): Observable<any> {
+  getReleveFactures(id: number, dateDebut?: string, dateFin?: string, statut?: string): Observable<any> {
     const body: any = { id };
     if (dateDebut) { body.date_debut = dateDebut; }
     if (dateFin) { body.date_fin = dateFin; }
+    if (statut) { body.statut = statut; } // 'tous' | 'non_solde'
 
     return this.http.post(`${this.url}/dossier/releve-factures`, body);
   }

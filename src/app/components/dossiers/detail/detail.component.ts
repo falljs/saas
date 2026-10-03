@@ -96,11 +96,13 @@ export class DetailComponent implements OnInit {
   releveType: string = '';
   releveDateDebut: string = '';
   releveDateFin: string = '';
+  releveStatut: string = 'non_solde'; // 'non_solde' (impayées + en cours) par défaut, ou 'tous'
   releveTotalMontant: number = 0;
   releveTotalRegle: number = 0;
   releveTotalRestant: number = 0;
   loadingReleve: boolean = false;
 
+  statsOpen = localStorage.getItem('dossier_stats_open') !== 'false'; // ouvert par défaut
 
   constructor(public dossierService: DossierService, public userService: UserService,
     public router: Router, public localStorageService: LocalStorageService,
@@ -118,6 +120,12 @@ export class DetailComponent implements OnInit {
       // Extraire le nom du premier rôle
       this.firstRoleName = this.userService.user.roles[0].name;
     }
+  }
+
+
+  toggleStats() {
+    this.statsOpen = !this.statsOpen;
+    localStorage.setItem('dossier_stats_open', String(this.statsOpen));
   }
 
   refreshRoleAndPermissonsUser(): void {
@@ -868,7 +876,7 @@ export class DetailComponent implements OnInit {
     this.loadingReleve = true;
 
     this.dossierService
-      .getReleveFactures(this.dossier.id, this.releveDateDebut, this.releveDateFin)
+      .getReleveFactures(this.dossier.id, this.releveDateDebut, this.releveDateFin, this.releveStatut)
       .subscribe({
         next: (res: any) => {
           this.releveFactures = res.factures;
@@ -885,10 +893,11 @@ export class DetailComponent implements OnInit {
       });
   }
 
-  // Réinitialise les filtres de dates et recharge
+  // Réinitialise les filtres (dates + statut) et recharge
   resetFiltresReleve(): void {
     this.releveDateDebut = '';
     this.releveDateFin = '';
+    this.releveStatut = 'non_solde';
     this.chargerReleveFactures();
   }
 
@@ -907,6 +916,7 @@ export class DetailComponent implements OnInit {
 
     if (this.releveDateDebut) { url += `&date_debut=${this.releveDateDebut}`; }
     if (this.releveDateFin) { url += `&date_fin=${this.releveDateFin}`; }
+    if (this.releveStatut) { url += `&statut=${this.releveStatut}`; }
 
     window.open(url, '_blank');
   }

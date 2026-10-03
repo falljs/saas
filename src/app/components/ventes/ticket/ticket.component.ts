@@ -62,50 +62,68 @@ export class TicketComponent implements OnInit {
     );
   }
 
-  getCommandes() {
-    this.isDisable = true;
-    this.isClick = true;
+  // =====================================================================
+  // Utilitaires communs (remplacent le code copié-collé)
+  // =====================================================================
+
+  /**
+   * Extrait la liste des commandes d'une réponse API.
+   * Accepte aussi bien un tableau direct que { commandes: [...] }.
+   * Ne plante jamais si la réponse est inattendue.
+   */
+  private extraireListe(data: any): any[] {
+    if (Array.isArray(data)) {
+      return data;
+    }
+    if (data && Array.isArray(data.commandes)) {
+      return data.commandes;
+    }
+    return [];
+  }
+
+  /** Applique une liste de commandes et recalcule compteurs, pagination et totaux. */
+  private appliquerListe(data: any): void {
+    const liste = this.extraireListe(data);
+    const s = this.commandeService;
+
+    s.listCommande = liste;
+    s.nbrCmd = liste.length;
+    this.nbrComm = liste.length;
+    this.nbrPage = Math.ceil(this.nbrComm / this.defaultItem);
+
+    s.totalVente = liste.reduce((t, c) => t + (Number(c.net) || 0), 0);
+    s.totalAvance = liste.reduce((t, c) => t + (Number(c.versement) || 0), 0);
+    s.totalRestant = liste.reduce((t, c) => t + (Number(c.restant) || 0), 0);
+  }
+
+  /** Remet les totaux à zéro avant un chargement. */
+  private resetTotaux(): void {
     this.commandeService.totalVente = 0;
     this.commandeService.totalAvance = 0;
     this.commandeService.totalRestant = 0;
-    this.commandeService.getCommandes().subscribe(
-      data => {
+  }
+
+  // =====================================================================
+  // Chargements
+  // =====================================================================
+
+  getCommandes() {
+    this.isDisable = true;
+    this.isClick = true;
+    this.resetTotaux();
+    this.commandeService.getCommandes().subscribe({
+      next: data => {
         this.isDisable = false;
         this.isClick = false;
-        let response: any = data;
-        this.commandeService.listCommande = response.commandes;
-        this.commandeService.nbrCmd = this.commandeService.listCommande.length;
-        this.nbrComm = this.commandeService.listCommande.length;
-        this.nbrPage = Math.ceil(this.nbrComm / this.defaultItem);
-        let totalVente = 0; let totalAvance = 0; let totalRestant = 0;
-
-        for (var i = 0; i < this.commandeService.nbrCmd; i++) {
-
-          if (this.commandeService.listCommande[i].net) {
-            totalVente += this.commandeService.listCommande[i].net;
-            this.commandeService.totalVente = totalVente;
-          } else {
-            totalVente += this.commandeService.listCommande[i].net;
-            this.commandeService.totalVente = totalVente;
-          }
-
-          if (this.commandeService.listCommande[i].versement) {
-            totalAvance += this.commandeService.listCommande[i].versement;
-            this.commandeService.totalAvance = totalAvance;
-          } else {
-            totalAvance += this.commandeService.listCommande[i].versement;
-            this.commandeService.totalAvance = totalAvance;
-          }
-
-          if (this.commandeService.listCommande[i].restant) {
-            totalRestant += this.commandeService.listCommande[i].restant;
-            this.commandeService.totalRestant = totalRestant;
-          } else {
-            totalRestant += this.commandeService.listCommande[i].restant;
-            this.commandeService.totalRestant = totalRestant;
-          }
-        }
-      });
+        this.page = 1;
+        this.appliquerListe(data);
+      },
+      error: err => {
+        this.isDisable = false;
+        this.isClick = false;
+        console.error('Erreur chargement des commandes :', err);
+      }
+    });
   }
 
   getClients() {
@@ -119,38 +137,10 @@ export class TicketComponent implements OnInit {
     this.page = 1;
     let search: any = $("#inputSearch").val();
     if (search) {
-      this.commandeService.searchCommande(search).subscribe(
-        response => {
-          this.commandeService.listCommande = response;
-          let totalVente = 0; let totalAvance = 0; let totalRestant = 0;
-
-          for (var i = 0; i < this.commandeService.listCommande.length; i++) {
-
-            if (this.commandeService.listCommande[i].net) {
-              totalVente += this.commandeService.listCommande[i].net;
-              this.commandeService.totalVente = totalVente;
-            } else {
-              totalVente += this.commandeService.listCommande[i].net;
-              this.commandeService.totalVente = totalVente;
-            }
-
-            if (this.commandeService.listCommande[i].versement) {
-              totalAvance += this.commandeService.listCommande[i].versement;
-              this.commandeService.totalAvance = totalAvance;
-            } else {
-              totalAvance += this.commandeService.listCommande[i].versement;
-              this.commandeService.totalAvance = totalAvance;
-            }
-
-            if (this.commandeService.listCommande[i].restant) {
-              totalRestant += this.commandeService.listCommande[i].restant;
-              this.commandeService.totalRestant = totalRestant;
-            } else {
-              totalRestant += this.commandeService.listCommande[i].restant;
-              this.commandeService.totalRestant = totalRestant;
-            }
-          }
-        });
+      this.commandeService.searchCommande(search).subscribe({
+        next: response => this.appliquerListe(response),
+        error: err => console.error('Erreur recherche :', err)
+      });
     } else {
       this.commandeService.getCommandesDay();
     }
@@ -158,9 +148,8 @@ export class TicketComponent implements OnInit {
 
   OnChangeStatus(ctrl: any) {
     if (ctrl.value) {
-      this.commandeService.totalVente = 0;
-      this.commandeService.totalAvance = 0;
-      this.commandeService.totalRestant = 0;
+      this.resetTotaux();
+      this.page = 1;
       this.status = ctrl.value;
       if (this.status == 'payer') {
         this.getCommandesPayer();
@@ -185,46 +174,13 @@ export class TicketComponent implements OnInit {
     this.searchSelect = '';
     this.showDropdown = false; // Fermer le dropdown après la sélection
     if (this.selectedClient.code) {
-      this.commandeService.totalVente = 0;
-      this.commandeService.totalAvance = 0;
-      this.commandeService.totalRestant = 0;
+      this.resetTotaux();
+      this.page = 1;
       this.codeClt = this.selectedClient.code;
-      this.commandeService.getCommandeByCodeClient(this.codeClt).subscribe(
-        data => {
-          let response: any = data;
-          this.commandeService.listCommande = response.commandes;
-          this.commandeService.nbrCmd = this.commandeService.listCommande.length;
-          this.nbrComm = this.commandeService.listCommande.length;
-          this.nbrPage = Math.ceil(this.nbrComm / this.defaultItem);
-          let totalVente = 0; let totalAvance = 0; let totalRestant = 0;
-
-          for (var i = 0; i < this.commandeService.nbrCmd; i++) {
-
-            if (this.commandeService.listCommande[i].net) {
-              totalVente += this.commandeService.listCommande[i].net;
-              this.commandeService.totalVente = totalVente;
-            } else {
-              totalVente += this.commandeService.listCommande[i].net;
-              this.commandeService.totalVente = totalVente;
-            }
-
-            if (this.commandeService.listCommande[i].versement) {
-              totalAvance += this.commandeService.listCommande[i].versement;
-              this.commandeService.totalAvance = totalAvance;
-            } else {
-              totalAvance += this.commandeService.listCommande[i].versement;
-              this.commandeService.totalAvance = totalAvance;
-            }
-
-            if (this.commandeService.listCommande[i].restant) {
-              totalRestant += this.commandeService.listCommande[i].restant;
-              this.commandeService.totalRestant = totalRestant;
-            } else {
-              totalRestant += this.commandeService.listCommande[i].restant;
-              this.commandeService.totalRestant = totalRestant;
-            }
-          }
-        });
+      this.commandeService.getCommandeByCodeClient(this.codeClt).subscribe({
+        next: data => this.appliquerListe(data),
+        error: err => console.error('Erreur chargement par client :', err)
+      });
     }
     else {
       this.commandeService.getCommandesDay();
@@ -233,47 +189,13 @@ export class TicketComponent implements OnInit {
 
   onChangeDate(ctrl: any) {
     if (ctrl.value) {
-      this.commandeService.totalVente = 0;
-      this.commandeService.totalAvance = 0;
-      this.commandeService.totalRestant = 0;
+      this.resetTotaux();
+      this.page = 1;
       let date = this.datePipe.transform(ctrl.value, 'dd-MM-yyyy');
-      this.commandeService.getCommandeByDate(date).subscribe(
-        data => {
-          let response: any = data;
-          this.commandeService.listCommande = response.commandes;
-          this.commandeService.nbrCmd = this.commandeService.listCommande.length;
-          this.nbrComm = this.commandeService.listCommande.length;
-          this.nbrPage = Math.ceil(this.nbrComm / this.defaultItem);
-          let totalVente = 0; let totalAvance = 0; let totalRestant = 0;
-
-          for (var i = 0; i < this.commandeService.nbrCmd; i++) {
-
-            if (this.commandeService.listCommande[i].net) {
-              totalVente += this.commandeService.listCommande[i].net;
-              this.commandeService.totalVente = totalVente;
-            } else {
-              totalVente += this.commandeService.listCommande[i].net;
-              this.commandeService.totalVente = totalVente;
-            }
-
-            if (this.commandeService.listCommande[i].versement) {
-              totalAvance += this.commandeService.listCommande[i].versement;
-              this.commandeService.totalAvance = totalAvance;
-            } else {
-              totalAvance += this.commandeService.listCommande[i].versement;
-              this.commandeService.totalAvance = totalAvance;
-            }
-
-            if (this.commandeService.listCommande[i].restant) {
-              totalRestant += this.commandeService.listCommande[i].restant;
-              this.commandeService.totalRestant = totalRestant;
-            } else {
-              totalRestant += this.commandeService.listCommande[i].restant;
-              this.commandeService.totalRestant = totalRestant;
-            }
-          }
-
-        });
+      this.commandeService.getCommandeByDate(date).subscribe({
+        next: data => this.appliquerListe(data),
+        error: err => console.error('Erreur chargement par date :', err)
+      });
     } else {
       this.commandeService.getCommandesDay();
     }
@@ -290,214 +212,53 @@ export class TicketComponent implements OnInit {
 
   onChange2DatesSecond(ctrl: any) {
     if (ctrl.value) {
-      this.commandeService.totalVente = 0;
-      this.commandeService.totalAvance = 0;
-      this.commandeService.totalRestant = 0;
+      this.resetTotaux();
+      this.page = 1;
       let date = this.datePipe.transform(ctrl.value, 'dd-MM-yyyy');
-      this.commandeService.getCommandeBy2Dates(this.date, date).subscribe(
-        data => {
-          let response: any = data;
-          this.commandeService.listCommande = response.commandes;
-          this.commandeService.nbrCmd = this.commandeService.listCommande.length;
-          this.nbrComm = this.commandeService.listCommande.length;
-          this.nbrPage = Math.ceil(this.nbrComm / this.defaultItem);
-          let totalVente = 0; let totalAvance = 0; let totalRestant = 0;
-
-          for (var i = 0; i < this.commandeService.nbrCmd; i++) {
-
-            if (this.commandeService.listCommande[i].net) {
-              totalVente += this.commandeService.listCommande[i].net;
-              this.commandeService.totalVente = totalVente;
-            } else {
-              totalVente += this.commandeService.listCommande[i].net;
-              this.commandeService.totalVente = totalVente;
-            }
-
-            if (this.commandeService.listCommande[i].versement) {
-              totalAvance += this.commandeService.listCommande[i].versement;
-              this.commandeService.totalAvance = totalAvance;
-            } else {
-              totalAvance += this.commandeService.listCommande[i].versement;
-              this.commandeService.totalAvance = totalAvance;
-            }
-
-            if (this.commandeService.listCommande[i].restant) {
-              totalRestant += this.commandeService.listCommande[i].restant;
-              this.commandeService.totalRestant = totalRestant;
-            } else {
-              totalRestant += this.commandeService.listCommande[i].restant;
-              this.commandeService.totalRestant = totalRestant;
-            }
-          }
-        });
+      this.commandeService.getCommandeBy2Dates(this.date, date).subscribe({
+        next: data => this.appliquerListe(data),
+        error: err => console.error('Erreur chargement entre deux dates :', err)
+      });
     } else {
       this.commandeService.getCommandesDay();
     }
   }
 
   getCommandesPayer() {
-    this.commandeService.totalVente = 0;
-    this.commandeService.totalAvance = 0;
-    this.commandeService.totalRestant = 0;
-    this.commandeService.getNbrCommandesPayer().subscribe(
-      data => {
-        this.commandeService.listCommande = data;
-        this.commandeService.nbrCmd = this.commandeService.listCommande.length;
-        this.nbrComm = this.commandeService.listCommande.length;
-        this.nbrPage = Math.ceil(this.nbrComm / this.defaultItem);
-        let totalVente = 0; let totalAvance = 0; let totalRestant = 0;
-
-        for (var i = 0; i < this.commandeService.nbrCmd; i++) {
-
-          if (this.commandeService.listCommande[i].net) {
-            totalVente += this.commandeService.listCommande[i].net;
-            this.commandeService.totalVente = totalVente;
-          } else {
-            totalVente += this.commandeService.listCommande[i].net;
-            this.commandeService.totalVente = totalVente;
-          }
-
-          if (this.commandeService.listCommande[i].versement) {
-            totalAvance += this.commandeService.listCommande[i].versement;
-            this.commandeService.totalAvance = totalAvance;
-          } else {
-            totalAvance += this.commandeService.listCommande[i].versement;
-            this.commandeService.totalAvance = totalAvance;
-          }
-
-          if (this.commandeService.listCommande[i].restant) {
-            totalRestant += this.commandeService.listCommande[i].restant;
-            this.commandeService.totalRestant = totalRestant;
-          } else {
-            totalRestant += this.commandeService.listCommande[i].restant;
-            this.commandeService.totalRestant = totalRestant;
-          }
-        }
-      });
+    this.resetTotaux();
+    this.commandeService.getNbrCommandesPayer().subscribe({
+      next: data => this.appliquerListe(data),
+      error: err => console.error('Erreur commandes payées :', err)
+    });
   }
 
   getCommandesEncours() {
-    this.commandeService.totalVente = 0;
-    this.commandeService.totalAvance = 0;
-    this.commandeService.totalRestant = 0;
-    this.commandeService.getNbrCommandesEncours().subscribe(
-      data => {
-        this.commandeService.listCommande = data;
-        this.commandeService.nbrCmd = this.commandeService.listCommande.length;
-        this.nbrComm = this.commandeService.listCommande.length;
-        this.nbrPage = Math.ceil(this.nbrComm / this.defaultItem);
-        let totalVente = 0; let totalAvance = 0; let totalRestant = 0;
-
-        for (var i = 0; i < this.commandeService.nbrCmd; i++) {
-
-          if (this.commandeService.listCommande[i].net) {
-            totalVente += this.commandeService.listCommande[i].net;
-            this.commandeService.totalVente = totalVente;
-          } else {
-            totalVente += this.commandeService.listCommande[i].net;
-            this.commandeService.totalVente = totalVente;
-          }
-
-          if (this.commandeService.listCommande[i].versement) {
-            totalAvance += this.commandeService.listCommande[i].versement;
-            this.commandeService.totalAvance = totalAvance;
-          } else {
-            totalAvance += this.commandeService.listCommande[i].versement;
-            this.commandeService.totalAvance = totalAvance;
-          }
-
-          if (this.commandeService.listCommande[i].restant) {
-            totalRestant += this.commandeService.listCommande[i].restant;
-            this.commandeService.totalRestant = totalRestant;
-          } else {
-            totalRestant += this.commandeService.listCommande[i].restant;
-            this.commandeService.totalRestant = totalRestant;
-          }
-        }
-      });
+    this.resetTotaux();
+    this.commandeService.getNbrCommandesEncours().subscribe({
+      next: data => this.appliquerListe(data),
+      error: err => console.error('Erreur commandes en cours :', err)
+    });
   }
 
   getCommandesRestant() {
-    this.commandeService.totalVente = 0;
-    this.commandeService.totalAvance = 0;
-    this.commandeService.totalRestant = 0;
-    this.commandeService.getNbrCommandesRestant().subscribe(
-      data => {
-        this.commandeService.listCommande = data;
-        this.commandeService.nbrCmd = this.commandeService.listCommande.length;
-        this.nbrComm = this.commandeService.listCommande.length;
-        this.nbrPage = Math.ceil(this.nbrComm / this.defaultItem);
-        let totalVente = 0; let totalAvance = 0; let totalRestant = 0;
-
-        for (var i = 0; i < this.commandeService.nbrCmd; i++) {
-
-          if (this.commandeService.listCommande[i].net) {
-            totalVente += this.commandeService.listCommande[i].net;
-            this.commandeService.totalVente = totalVente;
-          } else {
-            totalVente += this.commandeService.listCommande[i].net;
-            this.commandeService.totalVente = totalVente;
-          }
-
-          if (this.commandeService.listCommande[i].versement) {
-            totalAvance += this.commandeService.listCommande[i].versement;
-            this.commandeService.totalAvance = totalAvance;
-          } else {
-            totalAvance += this.commandeService.listCommande[i].versement;
-            this.commandeService.totalAvance = totalAvance;
-          }
-
-          if (this.commandeService.listCommande[i].restant) {
-            totalRestant += this.commandeService.listCommande[i].restant;
-            this.commandeService.totalRestant = totalRestant;
-          } else {
-            totalRestant += this.commandeService.listCommande[i].restant;
-            this.commandeService.totalRestant = totalRestant;
-          }
-        }
-      });
+    this.resetTotaux();
+    this.commandeService.getNbrCommandesRestant().subscribe({
+      next: data => this.appliquerListe(data),
+      error: err => console.error('Erreur commandes non payées :', err)
+    });
   }
 
   getCommandesWave() {
-    this.commandeService.totalVente = 0;
-    this.commandeService.totalAvance = 0;
-    this.commandeService.totalRestant = 0;
-    this.commandeService.getNbrCommandesWave().subscribe(
-      data => {
-        this.commandeService.listCommande = data;
-        this.commandeService.nbrCmd = this.commandeService.listCommande.length;
-        this.nbrComm = this.commandeService.listCommande.length;
-        this.nbrPage = Math.ceil(this.nbrComm / this.defaultItem);
-        let totalVente = 0; let totalAvance = 0; let totalRestant = 0;
-
-        for (var i = 0; i < this.commandeService.nbrCmd; i++) {
-
-          if (this.commandeService.listCommande[i].net) {
-            totalVente += this.commandeService.listCommande[i].net;
-            this.commandeService.totalVente = totalVente;
-          } else {
-            totalVente += this.commandeService.listCommande[i].net;
-            this.commandeService.totalVente = totalVente;
-          }
-
-          if (this.commandeService.listCommande[i].versement) {
-            totalAvance += this.commandeService.listCommande[i].versement;
-            this.commandeService.totalAvance = totalAvance;
-          } else {
-            totalAvance += this.commandeService.listCommande[i].versement;
-            this.commandeService.totalAvance = totalAvance;
-          }
-
-          if (this.commandeService.listCommande[i].restant) {
-            totalRestant += this.commandeService.listCommande[i].restant;
-            this.commandeService.totalRestant = totalRestant;
-          } else {
-            totalRestant += this.commandeService.listCommande[i].restant;
-            this.commandeService.totalRestant = totalRestant;
-          }
-        }
-      });
+    this.resetTotaux();
+    this.commandeService.getNbrCommandesWave().subscribe({
+      next: data => this.appliquerListe(data),
+      error: err => console.error('Erreur commandes Wave :', err)
+    });
   }
+
+  // =====================================================================
+  // Actions
+  // =====================================================================
 
   editCommande(commande: any) {
     this.commandeService.edit(commande);

@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { Achat } from 'src/app/models/achat';
@@ -20,7 +21,9 @@ declare var $: any;
   templateUrl: './create-achat.component.html',
   styleUrls: ['./create-achat.component.scss']
 })
-export class CreateAchatComponent implements OnInit {
+export class CreateAchatComponent implements OnInit, OnDestroy {
+
+  private produitSub?: Subscription;
 
   formFournisseur!: FormGroup;
   formAchat!: FormGroup;
@@ -129,6 +132,29 @@ export class CreateAchatComponent implements OnInit {
     if (this.userService.user.roles && this.userService.user.roles.length > 0) {
       this.firstRoleName = this.userService.user.roles[0].name;
     }
+
+    this.produitSub = this.produitService.produitCreated$.subscribe(() => this.refreshProduits());
+  }
+
+  ngOnDestroy(): void {
+    this.produitSub?.unsubscribe();
+  }
+
+  /** Recharge la liste après création d'un produit, en gardant les cases cochées */
+  refreshProduits(): void {
+    this.produitService.getAllProduct().subscribe({
+      next: (data: any[]) => {
+        const selectedCodes = new Set<string>(
+          this.ligneAchatService.listLigneAchat.map((l: LigneAchat) => l.code)
+        );
+        data.forEach((p: any) => p.isselected = selectedCodes.has(p.code));
+
+        this.produitService.listAllProduits = data;
+        this.produitService.listProduits = data;
+        localStorage.setItem('listProduitsCache', JSON.stringify(data));
+      },
+      error: (error) => console.error('Erreur lors du rafraîchissement des produits :', error)
+    });
   }
 
   getPasVente(): number {

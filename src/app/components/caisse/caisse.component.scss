@@ -647,3 +647,40 @@
     font-size: 1.6rem;
   }
 }
+
+.kpi-info {
+  margin-left: .4rem;
+  width: 1.15rem;
+  height: 1.15rem;
+  padding: 0;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  font-size: .7rem;
+  font-style: italic;
+  line-height: 1;
+  cursor: pointer;
+  opacity: .7;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
+.kpi-info__panel {
+  margin-top: .5rem;
+  padding: .5rem .65rem;
+  border-radius: .5rem;
+  background: rgba(0, 0, 0, .06);
+  font-size: .78rem;
+  font-weight: 400;
+  line-height: 1.45;
+}
+
+.kpi-info__result {
+  margin-top: .25rem;
+  padding-top: .25rem;
+  border-top: 1px solid rgba(0, 0, 0, .15);
+  font-weight: 600;
+}
