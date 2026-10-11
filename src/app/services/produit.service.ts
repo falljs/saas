@@ -217,6 +217,13 @@ export class ProduitService {
     return this.http.post(`${this.entrepot_update}`, data);
   }
 
+  update_produitsSotockEntrepot(produit: any) {
+    return this.http.post(
+      this.url + '/produit/entrepot_update',
+      produit
+    );
+  }
+
   delete_produitsEntrepot(id: number): Observable<any> {
     return this.http.get(`${this.entrepot_delete}/${id}`, { responseType: 'text' });
   }

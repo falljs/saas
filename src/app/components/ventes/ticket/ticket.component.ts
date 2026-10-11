@@ -107,11 +107,12 @@ export class TicketComponent implements OnInit {
   // Chargements
   // =====================================================================
 
+  // 1. Bouton « Toutes les commandes »
   getCommandes() {
     this.isDisable = true;
     this.isClick = true;
     this.resetTotaux();
-    this.commandeService.getCommandes().subscribe({
+    this.commandeService.getFactures().subscribe({   // était getCommandes()
       next: data => {
         this.isDisable = false;
         this.isClick = false;
@@ -124,6 +125,36 @@ export class TicketComponent implements OnInit {
         console.error('Erreur chargement des commandes :', err);
       }
     });
+  }
+
+  // 2. Recherche par date
+  onChangeDate(ctrl: any) {
+    if (ctrl.value) {
+      this.resetTotaux();
+      this.page = 1;
+      let date = this.datePipe.transform(ctrl.value, 'dd-MM-yyyy');
+      this.commandeService.getFacturesByDate(date).subscribe({   // était getCommandeByDate()
+        next: data => this.appliquerListe(data),
+        error: err => console.error('Erreur chargement par date :', err)
+      });
+    } else {
+      this.commandeService.getCommandesDay();
+    }
+  }
+
+  // 3. Recherche entre deux dates
+  onChange2DatesSecond(ctrl: any) {
+    if (ctrl.value) {
+      this.resetTotaux();
+      this.page = 1;
+      let date = this.datePipe.transform(ctrl.value, 'dd-MM-yyyy');
+      this.commandeService.getFacturesBy2Dates(this.date, date).subscribe({   // était getCommandeBy2Dates()
+        next: data => this.appliquerListe(data),
+        error: err => console.error('Erreur chargement entre deux dates :', err)
+      });
+    } else {
+      this.commandeService.getCommandesDay();
+    }
   }
 
   getClients() {
@@ -187,40 +218,12 @@ export class TicketComponent implements OnInit {
     }
   }
 
-  onChangeDate(ctrl: any) {
-    if (ctrl.value) {
-      this.resetTotaux();
-      this.page = 1;
-      let date = this.datePipe.transform(ctrl.value, 'dd-MM-yyyy');
-      this.commandeService.getCommandeByDate(date).subscribe({
-        next: data => this.appliquerListe(data),
-        error: err => console.error('Erreur chargement par date :', err)
-      });
-    } else {
-      this.commandeService.getCommandesDay();
-    }
-  }
-
   onChange2DatesFirst(ctrl: any) {
     if (ctrl.value) {
       let date = this.datePipe.transform(ctrl.value, 'dd-MM-yyyy');
       this.date = date;
     } else {
       this.getCommandes();
-    }
-  }
-
-  onChange2DatesSecond(ctrl: any) {
-    if (ctrl.value) {
-      this.resetTotaux();
-      this.page = 1;
-      let date = this.datePipe.transform(ctrl.value, 'dd-MM-yyyy');
-      this.commandeService.getCommandeBy2Dates(this.date, date).subscribe({
-        next: data => this.appliquerListe(data),
-        error: err => console.error('Erreur chargement entre deux dates :', err)
-      });
-    } else {
-      this.commandeService.getCommandesDay();
     }
   }
 

@@ -12,8 +12,8 @@
                     <span *ngIf="isDisable && isClick" class="spinner-border spinner-border-sm mx-1"></span>
                     <span *ngIf="isDisable && isClick">Chargement...</span>
                 </button>
-                <input name="numero" type="number" (keyup)="search()" id="inputSearch" class="form-control mx-1 w-auto"
-                    placeholder="Par Numéro" />
+                <input name="numero" type="text" (input)="onSearchInput($event.target)" id="inputSearch"
+                    class="form-control mx-1 w-auto" placeholder="N° (ex : 26A10) ou fournisseur" autocomplete="off" />
                 <input onfocus="(this.type='date')" (change)="onChangeDate($event.target)" name="date" type="text"
                     class="form-control mx-1 w-auto" placeholder="Par Date" />
                 <div class="seach-fournisseurs-desktop" id="desktop">
@@ -75,6 +75,7 @@
                 <table class="table card-table table-vcenter text-nowrap datatable">
                     <thead>
                         <tr>
+                            <th style="width: 40px;"></th>
                             <th>Numéro</th>
                             <th>Date</th>
                             <th>Fournisseur</th>
@@ -89,13 +90,19 @@
                     </thead>
                     <tbody>
                         <tr *ngIf="this.achatService.nbrAchat == 0">
-                            <td class="font-italic text-center" colspan="8">
+                            <td class="font-italic text-center" colspan="11">
                                 <marquee behavior="alternate" direction="" class="h3 text-warning">
                                     Aucun achat éffectuée pour le moment...
                                 </marquee>
                             </td>
                         </tr>
-                        <tr *ngFor="let achat of this.achatService.listAchat">
+                        <tr *ngFor="let achat of this.achatService.listAchat" [class.table-active]="isSelected(achat)">
+                            <td>
+                                <input type="checkbox" class="form-check-input" [checked]="isSelected(achat)"
+                                    [disabled]="!!selectDisabledReason(achat)"
+                                    [title]="selectDisabledReason(achat) || 'Sélectionner pour fusionner'"
+                                    (change)="toggleSelect(achat)" />
+                            </td>
                             <td>{{achat.numero}}</td>
                             <td>{{achat.date_achat}}</td>
                             <td>{{achat.nom_fn}}</td>
@@ -156,6 +163,183 @@
                     <label for="basic-url" style="font-weight: 600;" class="form-label">Total Restant</label>
                     <span class="form-control bg-light">{{achatService.totalRestant | number: '1.0-0'}} F FCA</span>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Barre de sélection -->
+    <div class="fusion-bar" *ngIf="selectedCount > 0">
+        <div class="fusion-bar__info">
+            <strong>{{ selectedCount }}</strong> achat(s) sélectionné(s)
+            <span class="text-muted">· {{ selectedFournisseurName }}</span>
+            <small *ngIf="selectedCount < 2" class="d-block text-warning">
+                Sélectionnez au moins un autre achat du même fournisseur
+            </small>
+        </div>
+        <div class="fusion-bar__actions">
+            <button type="button" class="btn btn-sm btn-light" (click)="clearSelection()">Annuler</button>
+            <button type="button" class="btn btn-sm btn-primary" [disabled]="selectedCount < 2"
+                (click)="openFusionModal()">
+                <i class="fa fa-object-group me-1"></i> Fusionner
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal de fusion -->
+    <div class="fusion-backdrop" *ngIf="showFusionModal" (click)="closeFusionModal()">
+        <div class="fusion-modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+
+            <div class="fusion-modal__header">
+                <h5 class="m-0"><i class="fa fa-object-group me-2"></i>Fusionner des achats</h5>
+                <button type="button" class="btn-close" aria-label="Fermer" [disabled]="fusionSubmitting"
+                    (click)="closeFusionModal()"></button>
+            </div>
+
+            <div class="fusion-modal__body">
+
+                <!-- Chargement -->
+                <div *ngIf="fusionLoading" class="text-center py-5">
+                    <span class="spinner-border"></span>
+                    <p class="mt-2 mb-0 text-muted">Préparation de la fusion...</p>
+                </div>
+
+                <!-- Erreur -->
+                <div *ngIf="fusionError" class="alert alert-danger">{{ fusionError }}</div>
+
+                <ng-container *ngIf="fusionPreview && !fusionLoading">
+
+                    <div class="alert alert-info py-2">
+                        Les produits, règlements et reçus seront regroupés dans l'<strong>achat principal</strong>.
+                        Les autres achats seront archivés. <strong>Le stock et les prix d'achat ne changent
+                            pas.</strong>
+                    </div>
+
+                    <!-- 1. Choix du principal -->
+                    <h6 class="fw-bold">1. Achat principal (celui qui sera conservé)</h6>
+                    <div class="table-responsive mb-3">
+                        <table class="table table-sm table-hover align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th>Numéro</th>
+                                    <th>Date</th>
+                                    <th class="text-end">Net</th>
+                                    <th class="text-end">Versement</th>
+                                    <th class="text-end">Restant</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let a of fusionPreview.achats" style="cursor: pointer;"
+                                    [class.table-primary]="a.id === fusionPrincipalId"
+                                    (click)="fusionPrincipalId = a.id">
+                                    <td>
+                                        <input type="radio" class="form-check-input" name="principal"
+                                            [checked]="a.id === fusionPrincipalId"
+                                            (change)="fusionPrincipalId = a.id" />
+                                    </td>
+                                    <td>{{ a.numero }}</td>
+                                    <td>{{ a.date_achat }}</td>
+                                    <td class="text-end">{{ a.net | number: '1.0-0' }} F CFA</td>
+                                    <td class="text-end">{{ a.versement | number: '1.0-0' }} F CFA</td>
+                                    <td class="text-end">{{ a.restant | number: '1.0-0' }} F CFA</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 2. Résultat -->
+                    <h6 class="fw-bold">2. Résultat de la fusion</h6>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6 col-md-3">
+                            <div class="fusion-stat"><small>Total HT</small><strong>{{ fusionPreview.totaux.totht |
+                                    number: '1.0-0' }} F</strong></div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="fusion-stat"><small>TVA</small><strong>{{ fusionPreview.totaux.tottva | number:
+                                    '1.0-0' }} F</strong></div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="fusion-stat"><small>Total TTC</small><strong>{{ fusionPreview.totaux.totttc |
+                                    number: '1.0-0' }} F</strong></div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="fusion-stat"><small>Frais</small><strong>{{ fusionPreview.totaux.totalFrais |
+                                    number: '1.0-0' }} F</strong></div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="fusion-stat"><small>Réduction</small><strong>{{ fusionPreview.totaux.reduction |
+                                    number: '1.0-0' }} F</strong></div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="fusion-stat"><small>Net à payer</small><strong>{{ fusionPreview.totaux.net |
+                                    number: '1.0-0' }} F</strong></div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="fusion-stat"><small>Versement</small><strong>{{ fusionPreview.totaux.versement |
+                                    number: '1.0-0' }} F</strong></div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="fusion-stat fusion-stat--accent"><small>Restant</small><strong>{{
+                                    fusionPreview.totaux.restant | number: '1.0-0' }} F</strong></div>
+                        </div>
+                    </div>
+
+                    <!-- Avertissements -->
+                    <div *ngFor="let w of fusionPreview.avertissements" class="alert alert-warning py-2">
+                        <i class="fa fa-exclamation-triangle me-1"></i> {{ w }}
+                    </div>
+                    <div *ngIf="nbDoublons > 0" class="alert alert-warning py-2">
+                        <i class="fa fa-exclamation-triangle me-1"></i>
+                        {{ nbDoublons }} produit(s) apparaissent dans plusieurs achats : leurs lignes restent séparées
+                        pour conserver les prix d'achat d'origine.
+                    </div>
+
+                    <!-- 3. Produits -->
+                    <h6 class="fw-bold">3. Produits après fusion ({{ fusionPreview.lignes.length }} lignes)</h6>
+                    <div class="table-responsive" style="max-height: 260px;">
+                        <table class="table table-sm align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Désignation</th>
+                                    <th class="text-end">Qté</th>
+                                    <th class="text-end">Prix achat</th>
+                                    <th class="text-end">Total HT</th>
+                                    <th>Origine</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let l of fusionPreview.lignes">
+                                    <td>{{ l.code }}</td>
+                                    <td>{{ l.designation }}</td>
+                                    <td class="text-end">{{ l.qty }}</td>
+                                    <td class="text-end">{{ l.prix_achat | number: '1.0-0' }}</td>
+                                    <td class="text-end">{{ l.totht | number: '1.0-0' }}</td>
+                                    <td>
+                                        <span *ngIf="isLigneAjoutee(l)" class="badge bg-info">
+                                            Ajouté · {{ l.achat_numero }}
+                                        </span>
+                                        <span *ngIf="!isLigneAjoutee(l)" class="badge bg-secondary">Principal</span>
+                                        <i *ngIf="isDoublon(l)" class="fa fa-exclamation-triangle text-warning ms-1"
+                                            title="Produit présent dans plusieurs achats"></i>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                </ng-container>
+            </div>
+
+            <div class="fusion-modal__footer">
+                <button type="button" class="btn btn-light" [disabled]="fusionSubmitting"
+                    (click)="closeFusionModal()">Annuler</button>
+                <button type="button" class="btn btn-primary"
+                    [disabled]="!fusionPreview || fusionLoading || fusionSubmitting" (click)="confirmFusion()">
+                    <span *ngIf="fusionSubmitting" class="spinner-border spinner-border-sm me-1"></span>
+                    <span *ngIf="!fusionSubmitting">Fusionner dans {{ fusionPrincipal?.numero }}</span>
+                    <span *ngIf="fusionSubmitting">Fusion en cours...</span>
+                </button>
             </div>
         </div>
     </div>

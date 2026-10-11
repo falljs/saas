@@ -36,6 +36,9 @@ export class AchatService {
   private deletedRecu = `${this.url}/achat/deleteRecu`;
   private recus = `${this.url}/achat/recus`;
 
+  private apercuFusionUrl = `${this.url}/achat/fusion/apercu`;
+  private fusionUrl = `${this.url}/achat/fusion`;
+
   listAchat!: any[];
   listRecu!: any[];
   achat!: any;
@@ -251,6 +254,14 @@ export class AchatService {
 
   getRecusAchat(id: number): Observable<any> {
     return this.http.get(`${this.recus}/${id}`);
+  }
+
+  apercuFusion(data: { ids: number[]; principal_id?: number | null }): Observable<any> {
+    return this.http.post(this.apercuFusionUrl, data);
+  }
+
+  fusionner(data: { ids: number[]; principal_id: number | null; auteur?: string }): Observable<any> {
+    return this.http.post(this.fusionUrl, data);
   }
 
 }

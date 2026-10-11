@@ -1,0 +1,9 @@
+.note-textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.note-lecture {
+    white-space: pre-line; // conserve les retours à la ligne de la note
+    word-break: break-word;
+}

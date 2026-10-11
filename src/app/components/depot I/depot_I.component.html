@@ -74,22 +74,50 @@
                             <td><span class="text-muted">{{produit.code}}</span></td>
                             <td>{{produit.designation}}</td>
                             <td>
-                                <div class="input-group " *ngIf="produit.editable">
-                                    <button class="btn btn-sm btn-danger" (click)="editDomain(produit)"> <i
-                                            class="fa fa-ban"></i> </button>
-                                    <input type="number" class="form-control" [(ngModel)]="produit.stock"
-                                        name="produit.stock" />
-                                    <button class="btn btn-sm btn-success" (click)="updateStock(produit)"> <i
-                                            class=" fa fa-check"></i> </button>
+
+                                <!-- Mode modification -->
+                                <div class="input-group" *ngIf="produit.editable">
+
+                                    <button type="button" class="btn btn-sm btn-danger" (click)="cancelEdit(produit)"
+                                        title="Annuler">
+                                        <i class="fa fa-times"></i>
+                                    </button>
+
+                                    <input type="number" min="0" class="form-control" style="width: 100px;"
+                                        [(ngModel)]="produit.stock" name="stock_{{ produit.id }}">
+
+                                    <button type="button" class="btn btn-sm btn-success" (click)="updateStock(produit)"
+                                        title="Enregistrer">
+                                        <i class="fa fa-check"></i>
+                                    </button>
+
                                 </div>
-                                <span *ngIf="!produit.editable">
+
+
+                                <!-- Mode affichage -->
+                                <div *ngIf="!produit.editable">
+
                                     <span *ngIf="produit.stock > produit.qtyAlert && produit.stock != 0"
-                                        class="fa fa-database text-success"></span>
+                                        class="fa fa-database text-success">
+                                    </span>
+
                                     <span *ngIf="produit.stock <= produit.qtyAlert && produit.stock != 0"
-                                        class="fa fa-database text-warning"></span>
-                                    <span *ngIf="produit.stock == 0" class="fa fa-database text-danger"></span>
-                                    {{produit.stock}}
-                                </span>
+                                        class="fa fa-database text-warning">
+                                    </span>
+
+                                    <span *ngIf="produit.stock == 0" class="fa fa-database text-danger">
+                                    </span>
+
+                                    {{ produit.stock }}
+
+                                    <!-- Bouton Modifier -->
+                                    <button type="button" class="btn btn-sm btn-primary ms-2"
+                                        (click)="editDomain(produit)" title="Modifier le stock" *ngIf="isTenantDkiS">
+                                        <i class="fa fa-edit"></i>
+                                    </button>
+
+                                </div>
+
                             </td>
                             <td>{{produit.prix_achat | number: '1.0-0'}} F CFA</td>
                             <td>{{produit.prix_achat * produit.stock | number: '1.0-0'}} F CFA</td>

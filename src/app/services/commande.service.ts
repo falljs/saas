@@ -110,6 +110,10 @@ export class CommandeService {
     });
   }
 
+  updateNote(data: { id: number; note: string | null }) {
+    return this.http.post(`${this.url}/commande/note`, data);
+  }
+
   create(data: Object): Observable<Object> {
     return this.http.post(this.created, data);
   }

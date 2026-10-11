@@ -83,6 +83,10 @@ export class Depot_I_Component implements OnInit {
     }
   }
 
+  get isTenantDkiS(): boolean {
+    return window.location.hostname.split('.')[0] === 'dki-s';
+  }
+
   refreshRoleAndPermissonsUser(): void {
     this.userService.refreshRoleAndPermissonsUser(this.userService.user.id).subscribe(data => {
       let resp: any = data;
@@ -106,60 +110,106 @@ export class Depot_I_Component implements OnInit {
     this.isChecked = false;
   }
 
+  cancelEdit(produit: any) {
+
+    // Restaurer l'ancien stock
+    produit.stock = produit.stockOriginal;
+
+    // Désactiver la modification
+    produit.editable = false;
+
+    this.editeLigne = false;
+  }
+
   // Edit Line
   editDomain(produit: any) {
-    produit.stock = 0;
-    this.editeLigne = true
-    produit.editable = !produit.editable;
+
+    // Sauvegarder l'ancienne valeur au cas où on annule
+    produit.stockOriginal = produit.stock;
+
+    // Activer la modification
+    produit.editable = true;
+
+    this.editeLigne = true;
   }
-
-
 
   updateStock(produit: any) {
-    this.editeLigne = false;
-    produit.editable = false
-    //console.log(data);
-    this.produitService.update_produitsEntrepot(produit).subscribe(
-      response => {
-        this.toastrService.success('La quantité de ' + produit.designation + 'a été mis a jour!');
-        this.getEntrepot_uns();
-      });
-  }
 
+    if (produit.stock === null || produit.stock === undefined || produit.stock < 0) {
+      this.toastrService.error('Le stock doit être supérieur ou égal à 0.');
+      return;
+    }
+
+    const delta = Number(produit.stock) - Number(produit.stockOriginal);
+
+    if (delta === 0) {
+      this.toastrService.info('Aucune modification du stock.');
+      produit.editable = false;
+      this.editeLigne = false;
+      return;
+    }
+
+    const data = {
+      id_produit: produit.id_produit,
+      stock: delta
+    };
+
+    this.produitService.update_produitsSotockEntrepot(data).subscribe({
+      next: () => {
+        produit.editable = false;
+        this.editeLigne = false;
+
+        this.toastrService.success(
+          'Stock de ' + produit.designation + ' mis à jour !'
+        );
+
+        this.getEntrepot_uns();
+      },
+      error: (err) => {
+        this.toastrService.error(
+          err?.error?.error || 'Impossible de mettre à jour le stock.'
+        );
+      }
+    });
+  }
 
   //Get All product
   getEntrepot_uns() {
     this.cat = '';
     this.qty = '';
-
     this.produitService.getEntrepot_uns().subscribe(res => {
       this.produits = res;
       this.nbrProduit = this.produits.length;
       this.nbrPage = Math.ceil(this.nbrProduit / this.defaultItem);
+      let totalQty = 0; let totalPrix = 0; let totalPrixGlobal = 0; let totalPrixVente = 0;
+      this.totalQty = 0; this.totalPrix = 0; this.totalPrixGlobal = 0; this.totalPrixVente = 0;
+      for (var i = 0; i < this.produits.length; i++) {
 
-      // Initialisation
-      let totalQty = 0;
-      let totalPrix = 0;
-      let totalPrixGlobal = 0;
-      let totalPrixVente = 0;
+        if (this.produits[i].stock) {
+          totalQty += this.produits[i].stock;
+          this.totalQty = totalQty;
+        } else {
+          totalQty += this.produits[i].stock;
+          this.totalQty = totalQty;
+        }
 
-      // Calcul des totaux
-      for (let i = 0; i < this.produits.length; i++) {
-        const stock = Number(this.produits[i].stock) || 0;
-        const prixAchat = Number(this.produits[i].prix_achat) || 0;
-        const prixVente = Number(this.produits[i].prix) || 0;
+        if (this.produits[i].prix) {
+          totalPrix += this.produits[i].prix_achat;
+          totalPrixVente += this.produits[i].prix;
+          this.totalPrix = totalPrix;
+          this.totalPrixVente = totalPrixVente;
+          totalPrixGlobal += this.produits[i].prix_achat * this.produits[i].stock;
+          this.totalPrixGlobal = totalPrixGlobal;
 
-        totalQty += stock;
-        totalPrix += prixAchat;
-        totalPrixVente += prixVente;
-        totalPrixGlobal += prixAchat * stock;
+        } else {
+          totalPrix += this.produits[i].prix_achat;
+          totalPrixVente += this.produits[i].prix;
+          this.totalPrix = totalPrix;
+          this.totalPrixVente = totalPrixVente;
+          totalPrixGlobal += this.produits[i].prix_achat * this.produits[i].stock;
+          this.totalPrixGlobal = totalPrixGlobal;
+        }
       }
-
-      // Affectation finale aux variables de classe
-      this.totalQty = totalQty;
-      this.totalPrix = totalPrix;
-      this.totalPrixVente = totalPrixVente;
-      this.totalPrixGlobal = totalPrixGlobal;
     });
   }
 

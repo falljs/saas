@@ -1,10 +1,13 @@
 import { DatePipe } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
+import { EMPTY, of, Subject, Subscription } from 'rxjs';
+import { catchError, debounceTime, switchMap } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { AchatService } from 'src/app/services/achat.service';
 import { FournisseurService } from 'src/app/services/fournisseur.service';
 import { LocalStorageService } from 'src/app/services/local-storage.service';
 import { UserService } from 'src/app/services/user.service';
+import { ToastrService } from 'ngx-toastr';
 declare var $: any;
 
 @Component({
@@ -28,14 +31,27 @@ export class ListAchatComponent implements OnInit {
   selectedFournisseur: any = null;
   showDropdown = false;
 
+  private search$ = new Subject<string>();
+  private searchSub?: Subscription;
+
   isDisable = false;
   isClick = false;
+
+  // ====== Fusion ======
+  // Map id -> achat : la sélection survit aux recherches et filtres
+  selection = new Map<number, any>();
+  showFusionModal = false;
+  fusionLoading = false;
+  fusionSubmitting = false;
+  fusionError: string | null = null;
+  fusionPreview: any = null;
+  fusionPrincipalId: number | null = null;
 
   firstRoleName: string | null = null; // Contiendra le premier nom de rôle
 
   constructor(public achatService: AchatService, public router: Router, public localStorageService: LocalStorageService,
     private datePipe: DatePipe, public fournisseurService: FournisseurService,
-    public userService: UserService) { }
+    public userService: UserService, private toastrService: ToastrService) { }
 
   ngOnInit() {
     this.date = this.datePipe.transform(new Date(Date.now()), 'dd-MM-yyyy');
@@ -47,6 +63,40 @@ export class ListAchatComponent implements OnInit {
       // Extraire le nom du premier rôle
       this.firstRoleName = this.userService.user.roles[0].name;
     }
+
+    this.searchSub = this.search$.pipe(
+      debounceTime(300),
+      switchMap((term: string) => {
+        if (!term) {
+          this.achatService.getAchatsDay();
+          return EMPTY;
+        }
+        return this.achatService.searchAchat(encodeURIComponent(term)).pipe(
+          catchError(() => of([]))
+        );
+      })
+    ).subscribe((res: any) => this.applyList(res));
+  }
+
+  ngOnDestroy() {
+    if (this.searchSub) {
+      this.searchSub.unsubscribe();
+    }
+  }
+
+  onSearchInput(target: any) {
+    this.search$.next((target.value || '').trim());
+  }
+
+  private applyList(list: any[]) {
+    this.achatService.listAchat = list;
+    this.achatService.nbrAchat = list.length;
+    this.nbrAchat = list.length;
+    this.nbrPage = Math.ceil(this.nbrAchat / this.defaultItem);
+
+    this.achatService.totalVente = list.reduce((s, a) => s + (a.net || 0), 0);
+    this.achatService.totalAvance = list.reduce((s, a) => s + (a.versement || 0), 0);
+    this.achatService.totalRestant = list.reduce((s, a) => s + (a.restant || 0), 0);
   }
 
   refreshRoleAndPermissonsUser(): void {
@@ -485,5 +535,162 @@ export class ListAchatComponent implements OnInit {
     const exceptions = ['user', 'token', 'payment'];
     this.localStorageService.clearLocalStorage(exceptions);
     this.router.navigate(['/achat-nouveau']);
+  }
+
+  // ====== FUSION D'ACHATS ======
+
+  get selectedAchats(): any[] {
+    return Array.from(this.selection.values());
+  }
+
+  get selectedCount(): number {
+    return this.selection.size;
+  }
+
+  get selectedFournisseurName(): string {
+    const first = this.selectedAchats[0];
+    return first ? first.nom_fn : '';
+  }
+
+  isSelected(achat: any): boolean {
+    return this.selection.has(achat.id);
+  }
+
+  // Raison pour laquelle un achat ne peut pas rejoindre la sélection (null = OK)
+  selectDisabledReason(achat: any): string | null {
+    if (this.selection.size === 0 || this.selection.has(achat.id)) {
+      return null;
+    }
+    const ref = this.selectedAchats[0];
+    if (ref.code_fn !== achat.code_fn) {
+      return 'Fournisseur différent de la sélection';
+    }
+    if ((ref.isAchat || '') !== (achat.isAchat || '')) {
+      return "Type d'achat différent de la sélection";
+    }
+    return null;
+  }
+
+  toggleSelect(achat: any) {
+    if (this.selection.has(achat.id)) {
+      this.selection.delete(achat.id);
+    } else if (!this.selectDisabledReason(achat)) {
+      this.selection.set(achat.id, achat);
+    }
+  }
+
+  clearSelection() {
+    this.selection.clear();
+  }
+
+  openFusionModal() {
+    if (this.selectedCount < 2) {
+      return;
+    }
+    const ids = this.selectedAchats.map(a => a.id).sort((a, b) => a - b);
+
+    this.showFusionModal = true;
+    this.fusionLoading = true;
+    this.fusionError = null;
+    this.fusionPreview = null;
+    this.fusionPrincipalId = ids[0]; // par défaut : le plus ancien
+
+    this.achatService.apercuFusion({ ids }).subscribe({
+      next: (res: any) => {
+        this.fusionPreview = res;
+        this.fusionPrincipalId = res.principal_id;
+        this.fusionLoading = false;
+      },
+      error: (err: any) => {
+        this.fusionLoading = false;
+        this.fusionError = this.extractError(err);
+      }
+    });
+  }
+
+  closeFusionModal() {
+    if (this.fusionSubmitting) {
+      return;
+    }
+    this.showFusionModal = false;
+    this.fusionPreview = null;
+    this.fusionError = null;
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape() {
+    if (this.showFusionModal) {
+      this.closeFusionModal();
+    }
+  }
+
+  get fusionPrincipal(): any {
+    if (!this.fusionPreview) {
+      return null;
+    }
+    return this.fusionPreview.achats.find((a: any) => a.id === this.fusionPrincipalId);
+  }
+
+  isLigneAjoutee(ligne: any): boolean {
+    return ligne.achat !== this.fusionPrincipalId;
+  }
+
+  isDoublon(ligne: any): boolean {
+    return this.fusionPreview.lignes.filter((l: any) => l.code === ligne.code).length > 1;
+  }
+
+  get nbDoublons(): number {
+    if (!this.fusionPreview) {
+      return 0;
+    }
+    const codes = this.fusionPreview.lignes.map((l: any) => l.code);
+    return new Set(codes.filter((c: any, i: number) => codes.indexOf(c) !== i)).size;
+  }
+
+  confirmFusion() {
+    if (!this.fusionPreview || this.fusionSubmitting) {
+      return;
+    }
+    this.fusionSubmitting = true;
+    this.fusionError = null;
+
+    const ids = this.fusionPreview.achats.map((a: any) => a.id);
+
+    this.achatService.fusionner({
+      ids,
+      principal_id: this.fusionPrincipalId,
+      // Adapte au champ utilisé ailleurs dans ton app pour "auteur"
+      auteur: this.userService.user.name
+    }).subscribe({
+      next: (res: any) => {
+        this.fusionSubmitting = false;
+        this.showFusionModal = false;
+        this.fusionPreview = null;
+        this.selection.clear();
+
+        const fusionnes = (res.fusionnes || []).join(', ');
+
+        this.toastrService.success(
+          `${fusionnes} fusionné(s) dans l'achat ${res.achat.numero}`,
+          'Fusion réussie',
+          { timeOut: 5000, closeButton: true, progressBar: true }
+        );
+
+        // Affiche directement l'achat fusionné
+        this.detail(res.achat);
+      },
+      error: (err: any) => {
+        this.fusionSubmitting = false;
+        this.fusionError = this.extractError(err);
+        this.toastrService.error(this.fusionError || 'Une erreur est survenue.', 'Fusion impossible');
+      }
+    });
+  }
+
+  private extractError(err: any): string {
+    if (err && err.error && err.error.message) {
+      return err.error.message;
+    }
+    return 'Une erreur est survenue. Veuillez réessayer.';
   }
 }

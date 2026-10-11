@@ -31,6 +31,13 @@ export class DetailCommandeComponent implements OnInit {
 
   @HostListener('window:keyup', ['$event'])
   keyEvent(event: KeyboardEvent) {
+
+    // NOUVEAU : ne jamais déclencher un règlement quand on tape dans la note (retour à la ligne)
+    const target = event.target as HTMLElement;
+    if (target?.tagName === 'TEXTAREA') {
+      return;
+    }
+
     if (event.keyCode === this.keyEnter) {
       if (this.verser == 0) {
 
@@ -112,6 +119,49 @@ export class DetailCommandeComponent implements OnInit {
   copied: boolean = false;
   payment: any = null;
 
+  // ------------------------------------------------------------------
+  // NOTE / COMMENTAIRE DE LA COMMANDE
+  // ------------------------------------------------------------------
+  noteText: string = '';
+  noteSaving: boolean = false;
+  readonly noteMaxLength = 1000;
+
+  /** Qui peut modifier la note */
+  get canEditNote(): boolean {
+    return this.userService.checkPermissionExistence(this.firstRoleName + ' modifier facture et devis Vente')
+      || this.userService.checkPermissionExistence(this.firstRoleName + ' régler une facture Vente');
+  }
+
+  /** Le texte saisi diffère de la note enregistrée */
+  get noteChanged(): boolean {
+    return (this.noteText || '').trim() !== (this.commande?.note || '').trim();
+  }
+
+  saveNote(): void {
+    if (!this.canEditNote || !this.noteChanged || this.noteSaving) return;
+
+    this.noteSaving = true;
+
+    this.commandeService.updateNote({ id: this.commande.id, note: this.noteText.trim() }).subscribe({
+      next: (resp: any) => {
+        this.noteSaving = false;
+        this.commande = { ...this.commande, note: resp?.commande?.note ?? null };
+        localStorage.setItem('commande', JSON.stringify(this.commande));
+        this.noteText = this.commande.note || '';
+        this.toastrService.success('Note enregistrée');
+      },
+      error: (err: any) => {
+        this.noteSaving = false;
+        this.toastrService.error(err?.error?.message || "Impossible d'enregistrer la note.");
+      }
+    });
+  }
+
+  clearNote(): void {
+    this.noteText = '';
+    this.saveNote();
+  }
+
   constructor(public router: Router, public fb: FormBuilder, public reglementService: LigneReglementService,
     public ligneCommandeService: LigneCommandeService, public commandeService: CommandeService,
     public userService: UserService, public ligneRegelementService: LigneReglementService,
@@ -143,6 +193,7 @@ export class DetailCommandeComponent implements OnInit {
       this.auteur = this.userService.name;
 
       this.totttc = this.commande.totttc;
+      this.noteText = this.commande.note || '';   // NOUVEAU
       this.getSetting();
       this.getCommClient();
       this.refreshRoleAndPermissonsUser();
@@ -166,8 +217,15 @@ export class DetailCommandeComponent implements OnInit {
     client: any = null
   ): void {
 
+    // NOUVEAU : ne pas écraser une note en cours de saisie (à calculer AVANT de remplacer this.commande)
+    const noteEnCoursDeSaisie = this.noteChanged;
+
     this.commande = commande;
     if (client) this.client = client;
+
+    if (!noteEnCoursDeSaisie) {
+      this.noteText = commande?.note || '';
+    }
 
     // Nouvelles références de tableau -> force le re-render Angular
     this.ligneCommandeService.listLigneCommande = [...(ligneCommandes || [])];
@@ -776,6 +834,7 @@ Merci.`;
       this.auteur = this.userService.name;
 
       this.totttc = this.commande.totttc;
+      this.noteText = this.commande.note || '';   // NOUVEAU
     });
   }
 
@@ -1050,6 +1109,3 @@ Merci.`;
   };*/
 
 }
-
-
-
