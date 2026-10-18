@@ -88,6 +88,9 @@ import { environment } from '../environments/environment';
 import { ReferralComponent } from './components/referral/referral.component';
 import { InscriptionComponent } from './components/inscription/inscription.component';
 import { ProduitCreateModalComponent } from './components/produit-create-modal/produit-create-modal.component';
+import { APP_INITIALIZER } from '@angular/core';
+import { centralInitializer, ssoInitializer } from './gateway/gateway.initializers';
+import { RemboursementComponent } from './components/remboursement/remboursement.component';
 
 @NgModule({
   declarations: [
@@ -167,6 +170,7 @@ import { ProduitCreateModalComponent } from './components/produit-create-modal/p
     ReferralComponent,
     InscriptionComponent,
     ProduitCreateModalComponent,
+    RemboursementComponent
   ],
   imports: [
     ServiceWorkerModule.register('ngsw-worker.js', {
@@ -184,10 +188,13 @@ import { ProduitCreateModalComponent } from './components/produit-create-modal/p
     NgxPaginationModule,
     NgChartsModule,
     ToastrModule.forRoot(),
+    FormsModule
     //PdfViewerModule
   ],
   providers: [
-    DatePipe
+    DatePipe,
+    { provide: APP_INITIALIZER, useFactory: centralInitializer, multi: true },
+    { provide: APP_INITIALIZER, useFactory: ssoInitializer, multi: true },
   ],
   bootstrap: [AppComponent]
 })

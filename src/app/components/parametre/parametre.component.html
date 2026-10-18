@@ -347,6 +347,42 @@
 
             </div>
 
+            <!-- ========================= -->
+            <!-- PRIX DE VENTE MINIMUM -->
+            <!-- ========================= -->
+
+            <div class="col-md-6">
+
+              <div class="card">
+
+                <div class="card-header">
+                  <strong>Prix de vente minimum</strong>
+                </div>
+
+                <div class="card-body">
+
+                  <div class="form-check mb-3">
+
+                    <input type="checkbox" class="form-check-input" formControlName="prix_minimum_actif"
+                      id="prix_minimum_actif">
+
+                    <label class="form-check-label" for="prix_minimum_actif">
+                      Interdire de vendre en dessous des prix fixés (détail, gros, douzaine, carton)
+                    </label>
+
+                  </div>
+
+                  <small class="text-muted">
+                    Si activé, le prix d'une ligne ne peut pas être modifié en dessous du prix
+                    fixé du produit pour le type de vente choisi.
+                  </small>
+
+                </div>
+
+              </div>
+
+            </div>
+
             <div class="col-md-6 mb-2">
               <label class="form-label">Pas de vente (quantité)</label>
               <select class="form-select" formControlName="pas_vente" id="pas_vente" [compareWith]="comparePasVente">

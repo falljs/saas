@@ -8,7 +8,7 @@
       <div class="d-flex flex-column flex-lg-row gap-2 align-items-stretch align-items-lg-center">
 
         <!-- Tous les bons -->
-        <button [disabled]="isDisable" type="button" (click)="getBons()" class="btn btn-info btn-sm">
+        <button [disabled]="isDisable" type="button" (click)="getBons()" class="btn btn-primary btn-sm">
           <span *ngIf="!isDisable && !isClick">Tous les bons</span>
           <span *ngIf="isDisable && isClick" class="spinner-border spinner-border-sm me-1"></span>
           <span *ngIf="isDisable && isClick">Chargement...</span>

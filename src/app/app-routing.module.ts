@@ -66,6 +66,9 @@ import { MouvementEditPlaceComponent } from './components/mouvements/mouvement-e
 import { RemboursementComponent } from './components/remboursement/remboursement.component';
 import { ReferralComponent } from './components/referral/referral.component';
 import { InscriptionComponent } from './components/inscription/inscription.component';
+import { GatewayLoginComponent } from './gateway/gateway-login.component';
+import { GatewayMagasinsComponent } from './gateway/gateway-magasins.component';
+import { gatewayGuard } from './gateway/gateway.guard';
 
 const appRroutes: Routes = [
   {
@@ -163,6 +166,9 @@ const appRroutes: Routes = [
   { path: 'print-ticket', component: PrintTicketComponent },
   { path: 'print-encaissement', component: PrintEncaissementComponent },
   { path: 'maintenance', component: MaintenanceComponent },
+  { path: 'gateway/login', component: GatewayLoginComponent },
+  { path: 'gateway/magasins', component: GatewayMagasinsComponent, canActivate: [gatewayGuard] },
+  { path: 'gateway', redirectTo: 'gateway/magasins', pathMatch: 'full' },
 ];
 
 @NgModule({

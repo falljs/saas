@@ -347,8 +347,17 @@
                                             {{lc.prix | number:'1.0-0'}}
                                         </span>
 
-                                        <input size="3" type="number" [(ngModel)]="lc.prix" name="prix"
-                                            *ngIf="lc.editable" />
+                                        <ng-container *ngIf="lc.editable">
+
+                                            <input size="3" type="number" [(ngModel)]="lc.prix" name="prix"
+                                                [min]="isPrixMinimumActive() ? getPrixMin(lc) : 0"
+                                                [class.is-invalid]="isPrixMinimumActive() && lc.prix < getPrixMin(lc)" />
+
+                                            <small *ngIf="isPrixMinimumActive()" class="text-muted d-block">
+                                                Min : {{ getPrixMin(lc) | number:'1.0-0' }}
+                                            </small>
+
+                                        </ng-container>
 
                                     </td>
 
@@ -482,13 +491,15 @@
                 <button routerLink="/ticket" type="button" class="btn btn-dark">Annuler</button>
             </span>
             <span class="float-end">
-                <button [disabled]="isDisable || editeLigne || this.ligneCommandeService.listLigneCommande.length == 0"
+                <button
+                    [disabled]="isDisable || editeLigne || this.ligneCommandeService.listLigneCommande.length == 0 || lignePrixInvalide()"
                     type="button" (click)="onSubmitDevis()" class="btn btn-success mx-2">
                     <span *ngIf="!isDisable && !isClick">Devis</span>
                     <span *ngIf="isDisable && isClick" class="spinner-border spinner-border-sm mx-1"></span>
                     <span *ngIf="isDisable && isClick">Chargement...</span>
                 </button>
-                <button [disabled]="isDisable || editeLigne || this.ligneCommandeService.listLigneCommande.length == 0"
+                <button
+                    [disabled]="isDisable || editeLigne || this.ligneCommandeService.listLigneCommande.length == 0 || lignePrixInvalide()"
                     type="button" (click)="onSubmitCommande()" class="btn btn-success">
                     <span *ngIf="!isDisable && !isClick">Facture</span>
                     <span *ngIf="isDisable && isClick" class="spinner-border spinner-border-sm mx-1"></span>

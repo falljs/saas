@@ -548,4 +548,11 @@ export class CommandeService {
     );
   }
 
+  printDettesClient(code: string): Observable<Blob> {
+    return this.http.get(
+      `${this.url}/print/dettes/client/${code}`,
+      { responseType: 'blob' }
+    );
+  }
+
 }

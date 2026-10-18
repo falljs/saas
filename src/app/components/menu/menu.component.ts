@@ -58,6 +58,11 @@ export class MenuComponent implements OnInit, OnDestroy {
 
   whatsappUrl = '';
 
+  // Porte d'entrée multi-magasins : le bouton n'apparaît que si la session
+  // a été ouverte depuis app.iconestock.com (drapeau posé par le SSO)
+  readonly viaGateway = localStorage.getItem('via_gateway') === '1';
+  readonly urlGateway = `https://${environment.centralHost}/#/gateway/magasins`;
+
   private routerSub?: Subscription;
   @ViewChild(ProduitCreateModalComponent) produitModal!: ProduitCreateModalComponent;
 

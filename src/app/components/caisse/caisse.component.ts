@@ -169,12 +169,10 @@ export class CaisseComponent implements OnInit {
     const cheque = Number(this.totalCheque) || 0;
 
     /*
-     * Ventes encaissées :
-     * on retire les paiements provenant
-     * des anciennes dettes.
-     */
-    this.totalVentesEncaissees =
-      reglements - (Number(this.totalDette) || 0);
+ * Ventes encaissées : tout ce qui a été réglé sur les ventes de la période
+ * (paiements du jour + paiements ultérieurs). Même logique que le restant.
+ */
+    this.totalVentesEncaissees = Number(this.totalVersementCmd) || 0;
 
 
     /*

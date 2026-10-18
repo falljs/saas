@@ -1,8 +1,16 @@
-import { Component, OnInit, ViewChild, ElementRef, HostListener } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  ViewChild,
+  ElementRef,
+  HostListener
+} from '@angular/core';
+
 import { ToastrService } from 'ngx-toastr';
 import { DatePipe } from '@angular/common';
 import { RemboursementService } from 'src/app/services/remboursement.service';
 import { UserService } from 'src/app/services/user.service';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-remboursement',
@@ -50,6 +58,10 @@ export class RemboursementComponent implements OnInit {
     if (this.userService.user.roles && this.userService.user.roles.length > 0) {
       this.firstRoleName = this.userService.user.roles[0].name;
     }
+  }
+
+  get isTenantBNDCO(): boolean {
+    return window.location.hostname.split('.')[0] === 'bayendiayeco';
   }
 
   refreshRoleAndPermissonsUser(): void {

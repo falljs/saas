@@ -234,6 +234,9 @@ export class ParametreComponent {
       emprunt_produit_active:
         this.setting.emprunt_produit_active ?? false,
 
+      prix_minimum_actif:
+        this.setting.prix_minimum_actif ?? false,
+
       pas_vente: Number(this.setting.pas_vente),
     });
 
@@ -319,6 +322,9 @@ export class ParametreComponent {
 
       // Vente au-delà du stock disponible (Super Admin uniquement)
       emprunt_produit_active: new FormControl(false),
+
+      // Interdire la vente sous les prix fixés
+      prix_minimum_actif: new FormControl(false),
 
       pas_vente: new FormControl(0.5, [Validators.required]),
     });
@@ -532,11 +538,14 @@ export class ParametreComponent {
           this.maintenance =
             data.data.maintenance;
 
-          // ✅ Resynchronise le formulaire avec la valeur
-          // réellement persistée côté serveur
+          // Resynchronise le formulaire avec les valeurs
+          // réellement persistées côté serveur
           this.formUpdate.patchValue({
             emprunt_produit_active:
-              data.data.emprunt_produit_active ?? false
+              data.data.emprunt_produit_active ?? false,
+
+            prix_minimum_actif:
+              data.data.prix_minimum_actif ?? false
           });
 
           this.toastrService.success(

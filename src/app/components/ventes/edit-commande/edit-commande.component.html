@@ -313,7 +313,8 @@
             <span class="float-start"><button (click)="retour()" type="button"
                     class="btn btn-dark">Annuler</button></span>
             <span class="float-end">
-                <button [disabled]="editeLigne|| isDisable || this.ligneCommandeService.listLigneCommande.length == 0"
+                <button
+                    [disabled]="editeLigne|| isDisable || this.ligneCommandeService.listLigneCommande.length == 0 || lignePrixInvalide()"
                     type="button" (click)="onSubmitUpdateCommande()" class="btn btn-primary">
                     <span *ngIf="!isDisable && !isClick">Mettre à jour</span>
                     <span *ngIf="isDisable && isClick" class="spinner-border spinner-border-sm mx-1"></span>

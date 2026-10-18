@@ -8,9 +8,13 @@
       <legend class="mx-3">Recherche <span
           class="mx-1 btn btn-sm rounded bg-info">{{this.commandeService.listCommande?.length}}</span> </legend>
       <div class="input-group mb-1">
-        <button [disabled]="isDisable" type="button" (click)="getCommandes()" class="btn mb-2 btn-sm btn-info w-auto">
+        <button [disabled]="isDisable" type="button" (click)="getCommandes()"
+          class="btn mb-2 btn-sm btn-primary w-auto">
+
           <span *ngIf="!isDisable && !isClick">Toutes les commandes</span>
+
           <span *ngIf="isDisable && isClick" class="spinner-border spinner-border-sm mx-1"></span>
+
           <span *ngIf="isDisable && isClick">Chargement...</span>
         </button>
         <input name="numero" type="text" (keyup)="search()" id="inputSearch" class="mb-2 form-control mx-1 w-auto"

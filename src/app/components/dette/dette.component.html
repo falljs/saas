@@ -45,7 +45,7 @@
                 <div class="col-md">
                   <label class="form-label">Imprimer</label>
                   <div *ngIf="print">
-                    <a href="javascript:void(0)" class="btn btn-warning" (click)="printData(nom_client)">
+                    <a href="javascript:void(0)" class="btn btn-warning" (click)="printData(selectedClient?.code)">
                       <i class="fa fa-print"></i>
                     </a>
                   </div>

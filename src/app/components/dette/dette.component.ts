@@ -140,6 +140,7 @@ export class DetteComponent implements OnInit {
   }
 
   onChangeDate(ctrl: any) {
+    this.print = false;
     if (ctrl.value) {
       let date = this.datePipe.transform(ctrl.value, 'dd-MM-yyyy');
       this.date_search = date;
@@ -174,11 +175,27 @@ export class DetteComponent implements OnInit {
     this.commandeService.detail(dv);
   }
 
-  printData(any: any) {
-    this.commandeService.onPrint().subscribe((data) => {
-      //let response: any = data;
-      window.open('https://www.wakeursmds.com/server/public/print/facture-bons/client/' + any, "_blank");
+  printData(code: string) {
+    if (!code) { return; }
+
+    // Fenêtre ouverte tout de suite (dans le clic) pour ne pas être bloquée
+    // par le navigateur, puis alimentée quand le PDF arrive.
+    const win = window.open('', '_blank');
+
+    this.commandeService.printDettesClient(code).subscribe({
+      next: (blob: Blob) => {
+        const url = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+        if (win) {
+          win.location.href = url;
+        } else {
+          window.open(url, '_blank');
+        }
+      },
+      error: () => {
+        win?.close();
+        this.toastrService.error("Impossible d'imprimer les dettes de ce client.");
+      }
     });
-  };
+  }
 
 }

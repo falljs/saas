@@ -302,6 +302,7 @@ export class EditCommandeComponent implements OnInit {
       this.ligneCommande.qtyProduit = produit.qty;
       this.ligneCommande.qty = this.getPasVente();
       this.ligneCommande.prix = produit.prix_gros;
+      this.ligneCommande.prixMin = Number(produit.prix_gros) || 0;
       this.ligneCommande.prix_achat = produit.prix_achat;
       this.ligneCommande.totht = this.ligneCommande.qty * this.ligneCommande.prix;
       this.ligneCommande.auteur = this.userService.name;
@@ -324,6 +325,7 @@ export class EditCommandeComponent implements OnInit {
       this.ligneCommande.qtyProduit = produit.qty;
       this.ligneCommande.qty = this.getPasVente();
       this.ligneCommande.prix = produit.prix_douzaine;
+      this.ligneCommande.prixMin = Number(produit.prix_douzaine) || 0;
       this.ligneCommande.prix_achat = produit.prix_achat;
       this.ligneCommande.totht = this.ligneCommande.qty * this.ligneCommande.prix;
       this.ligneCommande.auteur = this.userService.name;
@@ -344,8 +346,9 @@ export class EditCommandeComponent implements OnInit {
       this.ligneCommande.codeProduit = produit.code;
       this.ligneCommande.produit = produit.designation;
       this.ligneCommande.qtyProduit = produit.qty;
-      this.ligneCommande.qty = 0.5;
+      this.ligneCommande.qty = this.getPasVente();
       this.ligneCommande.prix = produit.prix_carton;
+      this.ligneCommande.prixMin = Number(produit.prix_carton) || 0;
       this.ligneCommande.prix_achat = produit.prix_achat;
       this.ligneCommande.totht = this.ligneCommande.qty * this.ligneCommande.prix;
       this.ligneCommande.auteur = this.userService.name;
@@ -369,6 +372,7 @@ export class EditCommandeComponent implements OnInit {
       this.ligneCommande.qtyProduit = produit.qty;
       this.ligneCommande.qty = this.getPasVente();
       this.ligneCommande.prix = produit.prix;
+      this.ligneCommande.prixMin = Number(produit.prix) || 0;
       this.ligneCommande.prix_achat = produit.prix_achat;
       this.ligneCommande.totht = this.ligneCommande.qty * this.ligneCommande.prix;
       this.ligneCommande.auteur = this.userService.name;
@@ -615,6 +619,21 @@ export class EditCommandeComponent implements OnInit {
     this.editeLigne = false;
     p.editable = !p.editable;
 
+    // Prix minimum de vente
+    if (this.isPrixMinimumActive()) {
+
+      const prixMin = this.getPrixMin(p);
+
+      if (Number(p.prix) < prixMin) {
+
+        this.toastrService.error(
+          'Le prix de « ' + p.produit + ' » ne peut pas être inférieur à ' + prixMin + '.'
+        );
+
+        p.prix = prixMin;
+      }
+    }
+
     const pas = this.getPasVente();
 
     // Quantité invalide
@@ -663,19 +682,77 @@ export class EditCommandeComponent implements OnInit {
     this.calcul();
   }
 
+  // ================================
+  // PRIX MINIMUM DE VENTE
+  // ================================
+
+  isPrixMinimumActive(): boolean {
+    return Number(this.parametre?.prix_minimum_actif) === 1;
+  }
+
+  /** Prix plancher d'une ligne : celui mémorisé à l'ajout, sinon le plus bas prix fixé du produit */
+  getPrixMin(l: LigneCommande): number {
+
+    if (l.prixMin != null && Number(l.prixMin) > 0) {
+      return Number(l.prixMin);
+    }
+
+    const p = this.produitService.listProduits?.find(
+      (x: any) => x.code === l.codeProduit
+    );
+
+    if (!p) {
+      return 0;
+    }
+
+    const paliers = [p.prix, p.prix_gros, p.prix_douzaine, p.prix_carton]
+      .map(Number)
+      .filter(n => n > 0);
+
+    return paliers.length ? Math.min(...paliers) : 0;
+  }
+
+  /** Retourne la première ligne dont le prix est sous le plancher, sinon null */
+  lignePrixInvalide(): LigneCommande | null {
+
+    if (!this.isPrixMinimumActive()) {
+      return null;
+    }
+
+    return this.ligneCommandeService.listLigneCommande.find(
+      (l: LigneCommande) => Number(l.prix) < this.getPrixMin(l)
+    ) ?? null;
+  }
+
   onSubmitUpdateCommande() {
+    const invalide = this.lignePrixInvalide();
+
+    if (invalide) {
+
+      this.toastrService.error(
+        'Prix inférieur au minimum autorisé pour « ' + invalide.produit + ' ».'
+      );
+
+      return;
+    }
     this.isDisable = true;
     this.isClick = true;
     this.dafaForm();
     if (this.clientAutre) {
       this.formUpdateCommande['nom_client'].setValue(this.clientAutre);
     }
-    this.commandeService.update(this.fUpdateCommande.value).subscribe(
-      data => {
-        let resp: any = data;
+    this.commandeService.update(this.fUpdateCommande.value).subscribe({
+      next: (data: any) => {
+        const resp: any = data;
         this.toastrService.success('Commande numero ' + resp.commande.numero + ' mise à jour !');
         this.commandeService.detail(resp.commande);
-      });
+      },
+      error: (err) => {
+        this.isDisable = false;
+        this.isClick = false;
+        this.toastrService.error(err?.error?.message || 'Erreur lors de la mise à jour.');
+      }
+    });
   }
 
   retour() {

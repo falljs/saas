@@ -788,6 +788,8 @@ export class VenteComponent implements OnInit, OnDestroy {
     this.ligneCommande.qty = this.getPasVente();
 
     this.ligneCommande.prix = produit.prix;
+    this.ligneCommande.prixMin = Number(produit.prix) || 0;
+
     this.ligneCommande.prix_achat = produit.prix_achat;
 
     this.ligneCommande.totht =
@@ -841,25 +843,22 @@ export class VenteComponent implements OnInit, OnDestroy {
       produitListe.isselected = true;
     }
 
-    // ============================================================
-    // AJOUT SELON LE TYPE DE VENTE
-    // ============================================================
-
+    // Ajout selon le type de vente (confirme = true : on ne rouvre pas le modal)
     if (this.typeVente === 'detail') {
 
       this.ajouterProduitDetail(produit);
 
     } else if (this.typeVente === 'gros') {
 
-      this.onchangeGros(produit);
+      this.onchangeGros(produit, true);
 
     } else if (this.typeVente === 'douzaine') {
 
-      this.onchangeDouzaine(produit);
+      this.onchangeDouzaine(produit, true);
 
     } else if (this.typeVente === 'carton') {
 
-      this.onchangeCarton(produit);
+      this.onchangeCarton(produit, true);
     }
 
     // On supprime le produit temporaire
@@ -1146,6 +1145,20 @@ export class VenteComponent implements OnInit, OnDestroy {
     const empruntActif =
       this.isEmpruntProduitActive();
 
+    if (this.isPrixMinimumActive()) {
+
+      const prixMin = this.getPrixMin(p);
+
+      if (Number(p.prix) < prixMin) {
+
+        this.toastrService.error(
+          'Le prix de « ' + p.produit + ' » ne peut pas être inférieur à ' + prixMin + '.'
+        );
+
+        p.prix = prixMin;
+      }
+    }
+
 
     if (
       p.qty > p.qtyProduit
@@ -1253,12 +1266,65 @@ export class VenteComponent implements OnInit, OnDestroy {
     );
   }
 
+  // ================================
+  // PRIX MINIMUM DE VENTE
+  // ================================
+
+  isPrixMinimumActive(): boolean {
+    return Number(this.parametre?.prix_minimum_actif) === 1;
+  }
+
+  /** Prix plancher d'une ligne : celui mémorisé à l'ajout, sinon le plus bas prix fixé du produit */
+  getPrixMin(l: LigneCommande): number {
+
+    if (l.prixMin != null && Number(l.prixMin) > 0) {
+      return Number(l.prixMin);
+    }
+
+    const p = this.produitService.listProduits?.find(
+      (x: any) => x.code === l.codeProduit
+    );
+
+    if (!p) {
+      return 0;
+    }
+
+    const paliers = [p.prix, p.prix_gros, p.prix_douzaine, p.prix_carton]
+      .map(Number)
+      .filter(n => n > 0);
+
+    return paliers.length ? Math.min(...paliers) : 0;
+  }
+
+  /** Retourne la première ligne dont le prix est sous le plancher, sinon null */
+  lignePrixInvalide(): LigneCommande | null {
+
+    if (!this.isPrixMinimumActive()) {
+      return null;
+    }
+
+    return this.ligneCommandeService.listLigneCommande.find(
+      (l: LigneCommande) => Number(l.prix) < this.getPrixMin(l)
+    ) ?? null;
+  }
+
 
   // ================================
   // CREATION COMMANDE
   // ================================
 
   onSubmitCommande() {
+
+    const invalide = this.lignePrixInvalide();
+
+    if (invalide) {
+
+      this.toastrService.error(
+        'Prix inférieur au minimum autorisé pour « ' + invalide.produit + ' ».'
+      );
+
+      return;
+    }
 
     this.isDisable = true;
     this.isClick = true;
@@ -1272,7 +1338,6 @@ export class VenteComponent implements OnInit, OnDestroy {
         )
       );
 
-
     if (this.clientAutre) {
 
       this.fCommande['nom_client']
@@ -1281,14 +1346,11 @@ export class VenteComponent implements OnInit, OnDestroy {
         );
     }
 
-
     this.commandeService
-      .create(
-        this.formCommande.value
-      )
-      .subscribe(
+      .create(this.formCommande.value)
+      .subscribe({
 
-        data => {
+        next: (data: any) => {
 
           const resp: any = data;
 
@@ -1298,20 +1360,38 @@ export class VenteComponent implements OnInit, OnDestroy {
             ' crée !'
           );
 
-          this.commandeService
-            .detail(
-              resp.commande
-            );
+          this.commandeService.detail(resp.commande);
+        },
+
+        error: (err) => {
+
+          this.isDisable = false;
+          this.isClick = false;
+
+          this.toastrService.error(
+            err?.error?.message ||
+            'Erreur lors de la création de la commande.'
+          );
         }
-      );
+      });
   }
 
 
   // ================================
   // CREATION DEVIS
   // ================================
-
   onSubmitDevis() {
+
+    const invalide = this.lignePrixInvalide();
+
+    if (invalide) {
+
+      this.toastrService.error(
+        'Prix inférieur au minimum autorisé pour « ' + invalide.produit + ' ».'
+      );
+
+      return;
+    }
 
     this.isDisable = true;
     this.isClick = true;
@@ -1325,7 +1405,6 @@ export class VenteComponent implements OnInit, OnDestroy {
         )
       );
 
-
     if (this.clientAutre) {
 
       this.fCommande['nom_client']
@@ -1334,14 +1413,11 @@ export class VenteComponent implements OnInit, OnDestroy {
         );
     }
 
-
     this.devisService
-      .create(
-        this.formCommande.value
-      )
-      .subscribe(
+      .create(this.formCommande.value)
+      .subscribe({
 
-        data => {
+        next: (data: any) => {
 
           const resp: any = data;
 
@@ -1351,14 +1427,21 @@ export class VenteComponent implements OnInit, OnDestroy {
             ' crée !'
           );
 
-          this.devisService
-            .detail(
-              resp.devis
-            );
-        }
-      );
-  }
+          this.devisService.detail(resp.devis);
+        },
 
+        error: (err) => {
+
+          this.isDisable = false;
+          this.isClick = false;
+
+          this.toastrService.error(
+            err?.error?.message ||
+            'Erreur lors de la création du devis.'
+          );
+        }
+      });
+  }
 
   // ================================
   // SEARCH DESIGNATION
@@ -1673,17 +1756,15 @@ export class VenteComponent implements OnInit, OnDestroy {
   // VENTE EN GROS
   // ================================
 
-  onchangeGros(produit: any) {
+  onchangeGros(produit: any, confirme: boolean = false) {
 
     if (produit.isselected === true) {
 
       const stock = Number(produit.qty) || 0;
       const empruntActif = this.isEmpruntProduitActive();
 
-      // ============================================================
-      // PRODUIT EN EMPRUNT
-      // ============================================================
-      if (stock <= 0 && empruntActif) {
+      // Produit en emprunt : on demande confirmation (sauf si déjà confirmé)
+      if (stock <= 0 && empruntActif && !confirme) {
 
         localStorage.setItem('produit', JSON.stringify(produit));
 
@@ -1699,10 +1780,9 @@ export class VenteComponent implements OnInit, OnDestroy {
         return;
       }
 
-      // ============================================================
-      // STOCK INSUFFISANT + EMPRUNT DESACTIVE
-      // ============================================================
+      // Stock insuffisant + emprunt désactivé
       if (stock <= 0 && !empruntActif) {
+
         produit.isselected = false;
 
         this.toastrService.error(
@@ -1712,16 +1792,14 @@ export class VenteComponent implements OnInit, OnDestroy {
         return;
       }
 
-      // ============================================================
-      // STOCK DISPONIBLE
-      // ============================================================
       this.ligneCommande.codeProduit = produit.code;
       this.ligneCommande.produit = produit.designation;
-      this.ligneCommande.qtyProduit = produit.qty;
+      this.ligneCommande.qtyProduit = Number(produit.qty) || 0;
 
-      this.ligneCommande.qty = 0.5;
+      this.ligneCommande.qty = this.getPasVente();
 
       this.ligneCommande.prix = produit.prix_gros;
+      this.ligneCommande.prixMin = Number(produit.prix_gros) || 0;
       this.ligneCommande.prix_achat = produit.prix_achat;
 
       this.ligneCommande.totht =
@@ -1753,22 +1831,18 @@ export class VenteComponent implements OnInit, OnDestroy {
     }
   }
 
-
   // ================================
   // VENTE A LA DOUZAINE
   // ================================
 
-  onchangeDouzaine(produit: any) {
+  onchangeDouzaine(produit: any, confirme: boolean = false) {
 
     if (produit.isselected === true) {
 
       const stock = Number(produit.qty) || 0;
       const empruntActif = this.isEmpruntProduitActive();
 
-      // ============================================================
-      // PRODUIT EN EMPRUNT
-      // ============================================================
-      if (stock <= 0 && empruntActif) {
+      if (stock <= 0 && empruntActif && !confirme) {
 
         localStorage.setItem('produit', JSON.stringify(produit));
 
@@ -1784,10 +1858,8 @@ export class VenteComponent implements OnInit, OnDestroy {
         return;
       }
 
-      // ============================================================
-      // STOCK INSUFFISANT + EMPRUNT DESACTIVE
-      // ============================================================
       if (stock <= 0 && !empruntActif) {
+
         produit.isselected = false;
 
         this.toastrService.error(
@@ -1797,16 +1869,14 @@ export class VenteComponent implements OnInit, OnDestroy {
         return;
       }
 
-      // ============================================================
-      // STOCK DISPONIBLE
-      // ============================================================
       this.ligneCommande.codeProduit = produit.code;
       this.ligneCommande.produit = produit.designation;
-      this.ligneCommande.qtyProduit = produit.qty;
+      this.ligneCommande.qtyProduit = Number(produit.qty) || 0;
 
-      this.ligneCommande.qty = 0.5;
+      this.ligneCommande.qty = this.getPasVente();
 
       this.ligneCommande.prix = produit.prix_douzaine;
+      this.ligneCommande.prixMin = Number(produit.prix_douzaine) || 0;
       this.ligneCommande.prix_achat = produit.prix_achat;
 
       this.ligneCommande.totht =
@@ -1843,17 +1913,14 @@ export class VenteComponent implements OnInit, OnDestroy {
   // VENTE AU CARTON
   // ================================
 
-  onchangeCarton(produit: any) {
+  onchangeCarton(produit: any, confirme: boolean = false) {
 
     if (produit.isselected === true) {
 
       const stock = Number(produit.qty) || 0;
       const empruntActif = this.isEmpruntProduitActive();
 
-      // ============================================================
-      // PRODUIT EN EMPRUNT
-      // ============================================================
-      if (stock <= 0 && empruntActif) {
+      if (stock <= 0 && empruntActif && !confirme) {
 
         localStorage.setItem('produit', JSON.stringify(produit));
 
@@ -1869,10 +1936,8 @@ export class VenteComponent implements OnInit, OnDestroy {
         return;
       }
 
-      // ============================================================
-      // STOCK INSUFFISANT + EMPRUNT DESACTIVE
-      // ============================================================
       if (stock <= 0 && !empruntActif) {
+
         produit.isselected = false;
 
         this.toastrService.error(
@@ -1882,16 +1947,14 @@ export class VenteComponent implements OnInit, OnDestroy {
         return;
       }
 
-      // ============================================================
-      // STOCK DISPONIBLE
-      // ============================================================
       this.ligneCommande.codeProduit = produit.code;
       this.ligneCommande.produit = produit.designation;
-      this.ligneCommande.qtyProduit = produit.qty;
+      this.ligneCommande.qtyProduit = Number(produit.qty) || 0;
 
-      this.ligneCommande.qty = 0.5;
+      this.ligneCommande.qty = this.getPasVente();
 
       this.ligneCommande.prix = produit.prix_carton;
+      this.ligneCommande.prixMin = Number(produit.prix_carton) || 0;
       this.ligneCommande.prix_achat = produit.prix_achat;
 
       this.ligneCommande.totht =

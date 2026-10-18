@@ -13,4 +13,5 @@ export class LigneCommande {
   qtyProduit!: any;
   editable!: any
   pas: number = 0.5;
+  prixMin?: number;
 }

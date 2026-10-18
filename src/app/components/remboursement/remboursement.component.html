@@ -1,7 +1,7 @@
 <div class="card container_fluid">
     <div class="card-header bg-white py-1 h3 mb-1"><span class="mx-1">La liste des remboursements</span></div>
 
-    <div class="card-body" *ngIf="userService.checkPermissionExistence(firstRoleName+ ' faire remboursement Vente')">
+    <div class="card-body" *ngIf="isTenantBNDCO">
         <div class="row">
             <div class="col-md-12">
                 <div class="card">

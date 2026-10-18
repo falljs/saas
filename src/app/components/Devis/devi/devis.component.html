@@ -7,7 +7,7 @@
     <fieldset>
       <legend class="mx-3">Recherche</legend>
       <div class="input-group mb-1">
-        <button [disabled]="isDisable" type="button" (click)="getDevis()" class="btn btn-sm btn-info mx-1 w-auto">
+        <button [disabled]="isDisable" type="button" (click)="getDevis()" class="btn btn-sm btn-primary mx-1 w-auto">
           <span *ngIf="!isDisable && !isClick">Tous les Devis</span>
           <span *ngIf="isDisable && isClick" class="spinner-border spinner-border-sm mx-1"></span>
           <span *ngIf="isDisable && isClick">Chargement...</span>

@@ -684,3 +684,13 @@
   border-top: 1px solid rgba(0, 0, 0, .15);
   font-weight: 600;
 }
+
+.kpi-card--hero .kpi-info {
+  color: #fff;
+  border-color: rgba(255, 255, 255, .6);
+}
+
+.kpi-card--hero .kpi-info__panel {
+  background: rgba(255, 255, 255, .12);
+  color: #fff;
+}

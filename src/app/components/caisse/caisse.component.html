@@ -78,63 +78,57 @@
   <div class="kpi-grid">
 
     <!-- TOTAL DES VENTES -->
-    <div class="kpi-item" *ngIf="
-      userService.checkPermissionExistence(
-        firstRoleName + ' voir total ventes Caisse'
-      )
-    ">
+    <div class="kpi-item" *ngIf="userService.checkPermissionExistence(firstRoleName + ' voir total ventes Caisse')">
       <div class="kpi-card kpi-card--hero">
         <div class="kpi-card__label">
           Total des ventes
+          <button type="button" class="kpi-info" (click)="toggleInfo('ventes')"
+            title="Montant de toutes les ventes de la période. Cliquez pour le détail."
+            aria-label="Voir le détail">i</button>
         </div>
-
-        <div class="kpi-card__value">
-          {{ totalVente | number:'1.0-0' }} F CFA
+        <div class="kpi-card__value">{{ totalVente | number:'1.0-0' }} F CFA</div>
+        <div class="kpi-info__panel" *ngIf="openInfo === 'ventes'">
+          Somme du montant net de toutes les factures de la période, <b>réductions déjà retirées</b>.
+          Que le client ait payé ou non, la vente est comptée. Les factures mises à la corbeille sont exclues.
         </div>
       </div>
     </div>
 
 
     <!-- VENTES ENCAISSÉES -->
-    <div class="kpi-item" *ngIf="
-      userService.checkPermissionExistence(
-        firstRoleName + ' voir ventes encaissés Caisse'
-      )
-    ">
+    <div class="kpi-item" *ngIf="userService.checkPermissionExistence(firstRoleName + ' voir ventes encaissés Caisse')">
       <div class="kpi-card kpi-card--green">
-
         <div class="kpi-card__label">
           Ventes encaissées
+          <button type="button" class="kpi-info" (click)="toggleInfo('encaissees')"
+            title="Argent reçu pour les ventes de la période. Cliquez pour le détail."
+            aria-label="Voir le détail">i</button>
         </div>
-
-        <div class="kpi-card__value">
-          {{ totalVentesEncaissees | number:'1.0-0' }} F CFA
+        <div class="kpi-card__value">{{ totalVentesEncaissees | number:'1.0-0' }} F CFA</div>
+        <div class="kpi-info__panel" *ngIf="openInfo === 'encaissees'">
+          Tout l'argent reçu pour les ventes de la période, <b>le jour même ou plus tard</b>.
+          <div class="kpi-info__result">Ventes encaissées + Total restant = Total des ventes</div>
         </div>
-
       </div>
     </div>
 
 
     <!-- TOTAL RESTANT -->
-    <div class="kpi-item" *ngIf="
-      userService.checkPermissionExistence(
-        firstRoleName + ' voir total restants Caisse'
-      )
-    ">
+    <div class="kpi-item" *ngIf="userService.checkPermissionExistence(firstRoleName + ' voir total restants Caisse')">
       <div class="kpi-card kpi-card--amber">
-
         <div class="kpi-card__label">
           Total restant
+          <button type="button" class="kpi-info" (click)="toggleInfo('restant')"
+            title="Ce que les clients doivent encore payer. Cliquez pour le détail."
+            aria-label="Voir le détail">i</button>
         </div>
-
-        <div class="kpi-card__value">
-          {{
-          totalVente - totalVentesEncaissees
-          | number:'1.0-0'
-          }}
-          F CFA
+        <div class="kpi-card__value">{{ totalRestant | number:'1.0-0' }} F CFA</div>
+        <div class="kpi-info__panel" *ngIf="openInfo === 'restant'">
+          <div>Total des ventes : <b>{{ totalVente | number:'1.0-0' }} F</b></div>
+          <div>− Ventes encaissées : <b>{{ totalVentesEncaissees | number:'1.0-0' }} F</b></div>
+          <div class="kpi-info__result">= Reste à payer : {{ totalRestant | number:'1.0-0' }} F</div>
+          <small>C'est l'argent que les clients doivent encore.</small>
         </div>
-
       </div>
     </div>
 
@@ -143,106 +137,96 @@
        TOTAL VERSEMENTS
        UNIQUEMENT SI LE MODULE EST ACTIF
   ======================================================== -->
-    <div class="kpi-item" *ngIf="
-      caisseActive &&
-      userService.checkPermissionExistence(
-        firstRoleName + ' voir total versements Caisse'
-      )
-    ">
+    <div class="kpi-item"
+      *ngIf="caisseActive && userService.checkPermissionExistence(firstRoleName + ' voir total versements Caisse')">
       <div class="kpi-card kpi-card--amber">
-
         <div class="kpi-card__label">
           Total versements
+          <button type="button" class="kpi-info" (click)="toggleInfo('versements')"
+            title="Entrées et sorties d'argent saisies à la main. Cliquez pour le détail."
+            aria-label="Voir le détail">i</button>
         </div>
-
-        <div class="kpi-card__value">
-          {{
-          encaissements_sum - decaissements_sum
-          | number:'1.0-0'
-          }}
-          F CFA
+        <div class="kpi-card__value">{{ encaissements_sum - decaissements_sum | number:'1.0-0' }} F CFA</div>
+        <div class="kpi-info__panel" *ngIf="openInfo === 'versements'">
+          <div>Entrées d'argent saisies à la main : <b>{{ encaissements_sum | number:'1.0-0' }} F</b></div>
+          <div>− Sorties d'argent saisies à la main : <b>{{ decaissements_sum | number:'1.0-0' }} F</b></div>
+          <small>Ces mouvements ne viennent pas des ventes. Ils sont ajoutés au total dans la caisse.</small>
         </div>
-
       </div>
     </div>
 
 
     <!-- TOTAL REMBOURSEMENT -->
-    <div class="kpi-item" *ngIf="
-      userService.checkPermissionExistence(
-        firstRoleName + ' voir total remboursements Caisse'
-      )
-    ">
+    <div class="kpi-item"
+      *ngIf="userService.checkPermissionExistence(firstRoleName + ' voir total remboursements Caisse')">
       <div class="kpi-card kpi-card--red">
-
         <div class="kpi-card__label">
           Total remboursement
+          <button type="button" class="kpi-info" (click)="toggleInfo('remboursement')"
+            title="Argent rendu aux clients. Cliquez pour le détail." aria-label="Voir le détail">i</button>
         </div>
-
-        <div class="kpi-card__value">
-          {{ totalRemboursement | number:'1.0-0' }} F CFA
+        <div class="kpi-card__value">{{ totalRemboursement | number:'1.0-0' }} F CFA</div>
+        <div class="kpi-info__panel" *ngIf="openInfo === 'remboursement'">
+          Argent rendu aux clients pendant la période. Ce montant est <b>retiré</b> du total dans la caisse.
         </div>
-
       </div>
     </div>
 
 
     <!-- DETTE ENCAISSÉE -->
-    <div class="kpi-item" *ngIf="
-      userService.checkPermissionExistence(
-        firstRoleName + ' voir dettes encaissées Caisse'
-      )
-    ">
+    <div class="kpi-item"
+      *ngIf="userService.checkPermissionExistence(firstRoleName + ' voir dettes encaissées Caisse')">
       <div class="kpi-card kpi-card--brand">
-
         <div class="kpi-card__label">
           Dette encaissée
+          <button type="button" class="kpi-info" (click)="toggleInfo('dette')"
+            title="Argent reçu pour des ventes faites avant. Cliquez pour le détail."
+            aria-label="Voir le détail">i</button>
         </div>
-
-        <div class="kpi-card__value">
-          {{ totalDette | number:'1.0-0' }} F CFA
+        <div class="kpi-card__value">{{ totalDette | number:'1.0-0' }} F CFA</div>
+        <div class="kpi-info__panel" *ngIf="openInfo === 'dette'">
+          Argent reçu pour une vente faite <b>avant</b>.
+          <div><b>Toutes les ventes</b> : paiement fait un autre jour que la vente.</div>
+          <div><b>Une période</b> : paiement fait dans la période, pour une vente faite avant la période.</div>
+          <small>Ce montant est déjà inclus dans « Total encaissements » et « Ventes encaissées ». Il ne s'ajoute à
+            rien.</small>
         </div>
-
       </div>
     </div>
 
 
     <!-- TOTAL ENCAISSEMENTS -->
-    <div class="kpi-item" *ngIf="
-      userService.checkPermissionExistence(
-        firstRoleName + ' voir total encaissements Caisse'
-      )
-    ">
+    <div class="kpi-item"
+      *ngIf="userService.checkPermissionExistence(firstRoleName + ' voir total encaissements Caisse')">
       <div class="kpi-card kpi-card--green">
-
         <div class="kpi-card__label">
           Total encaissements
+          <button type="button" class="kpi-info" (click)="toggleInfo('encaissements')"
+            title="Tous les paiements reçus pendant la période. Cliquez pour le détail."
+            aria-label="Voir le détail">i</button>
         </div>
-
-        <div class="kpi-card__value">
-          {{ totlaAvanceReglement | number:'1.0-0' }} F CFA
+        <div class="kpi-card__value">{{ totlaAvanceReglement | number:'1.0-0' }} F CFA</div>
+        <div class="kpi-info__panel" *ngIf="openInfo === 'encaissements'">
+          Tous les paiements reçus <b>pendant la période</b>, quelle que soit la date de la vente.
+          Les paiements des anciennes dettes en font partie.
         </div>
-
       </div>
     </div>
 
 
     <!-- TOTAL FRAIS -->
-    <div class="kpi-item" *ngIf="
-      userService.checkPermissionExistence(
-        firstRoleName + ' voir total frais Caisse'
-      )
-    ">
+    <div class="kpi-item" *ngIf="userService.checkPermissionExistence(firstRoleName + ' voir total frais Caisse')">
       <div class="kpi-card kpi-card--amber">
-
         <div class="kpi-card__label">
           Total des frais
+          <button type="button" class="kpi-info" (click)="toggleInfo('frais')"
+            title="Dépenses enregistrées sur la période. Cliquez pour le détail." aria-label="Voir le détail">i</button>
         </div>
-
-        <div class="kpi-card__value">
-          {{ totalFrais | number:'1.0-0' }} F CFA
+        <div class="kpi-card__value">{{ totalFrais | number:'1.0-0' }} F CFA</div>
+        <div class="kpi-info__panel" *ngIf="openInfo === 'frais'">
+          Dépenses enregistrées pendant la période. Elles sont <b>retirées</b> du bénéfice net et du total dans la
+          caisse.
         </div>
-
       </div>
     </div>
 
@@ -321,41 +305,35 @@
 
 
     <!-- TOTAL WAVE -->
-    <div class="kpi-item" *ngIf="
-      userService.checkPermissionExistence(
-        firstRoleName + ' voir total waves Caisse'
-      )
-    ">
+    <div class="kpi-item" *ngIf="userService.checkPermissionExistence(firstRoleName + ' voir total waves Caisse')">
       <div class="kpi-card kpi-card--blue">
-
         <div class="kpi-card__label">
           Total dans le Wave
+          <button type="button" class="kpi-info" (click)="toggleInfo('wave')"
+            title="Paiements reçus par Wave. Cliquez pour le détail." aria-label="Voir le détail">i</button>
         </div>
-
-        <div class="kpi-card__value">
-          {{ totalWave | number:'1.0-0' }} F CFA
+        <div class="kpi-card__value">{{ totalWave | number:'1.0-0' }} F CFA</div>
+        <div class="kpi-info__panel" *ngIf="openInfo === 'wave'">
+          Paiements reçus par Wave pendant la période. Cet argent n'est pas en espèces, il est donc <b>retiré</b> du
+          total dans la caisse.
         </div>
-
       </div>
     </div>
 
 
     <!-- TOTAL CHÈQUES -->
-    <div class="kpi-item" *ngIf="
-      userService.checkPermissionExistence(
-        firstRoleName + ' voir total chèques Caisse'
-      )
-    ">
+    <div class="kpi-item" *ngIf="userService.checkPermissionExistence(firstRoleName + ' voir total chèques Caisse')">
       <div class="kpi-card kpi-card--blue">
-
         <div class="kpi-card__label">
           Total chèques
+          <button type="button" class="kpi-info" (click)="toggleInfo('cheque')"
+            title="Paiements reçus par chèque. Cliquez pour le détail." aria-label="Voir le détail">i</button>
         </div>
-
-        <div class="kpi-card__value">
-          {{ totalCheque | number:'1.0-0' }} F CFA
+        <div class="kpi-card__value">{{ totalCheque | number:'1.0-0' }} F CFA</div>
+        <div class="kpi-info__panel" *ngIf="openInfo === 'cheque'">
+          Paiements reçus par chèque pendant la période. Ce n'est pas de l'argent en espèces, il est donc <b>retiré</b>
+          du total dans la caisse.
         </div>
-
       </div>
     </div>
 
@@ -363,21 +341,24 @@
     <!-- =======================================================
        TOTAL DANS LA CAISSE
   ======================================================== -->
-    <div class="kpi-item" *ngIf="
-      userService.checkPermissionExistence(
-        firstRoleName + ' voir total caisses Caisse'
-      )
-    ">
+    <div class="kpi-item" *ngIf="userService.checkPermissionExistence(firstRoleName + ' voir total caisses Caisse')">
       <div class="kpi-card kpi-card--hero kpi-card--caisse">
-
         <div class="kpi-card__label">
           Total dans la caisse
+          <button type="button" class="kpi-info" (click)="toggleInfo('caisse')"
+            title="Argent réellement présent en espèces. Cliquez pour le détail." aria-label="Voir le détail">i</button>
         </div>
-
-        <div class="kpi-card__value">
-          {{ totalCaisse | number:'1.0-0' }} F CFA
+        <div class="kpi-card__value">{{ totalCaisse | number:'1.0-0' }} F CFA</div>
+        <div class="kpi-info__panel" *ngIf="openInfo === 'caisse'">
+          <div>Total encaissements : <b>{{ totlaAvanceReglement | number:'1.0-0' }} F</b></div>
+          <div *ngIf="caisseActive">+ Entrées à la main : <b>{{ encaissements_sum | number:'1.0-0' }} F</b></div>
+          <div *ngIf="caisseActive">− Sorties à la main : <b>{{ decaissements_sum | number:'1.0-0' }} F</b></div>
+          <div>− Remboursements : <b>{{ totalRemboursement | number:'1.0-0' }} F</b></div>
+          <div>− Frais : <b>{{ totalFrais | number:'1.0-0' }} F</b></div>
+          <div>− Wave : <b>{{ totalWave | number:'1.0-0' }} F</b></div>
+          <div>− Chèques : <b>{{ totalCheque | number:'1.0-0' }} F</b></div>
+          <div class="kpi-info__result">= En caisse : {{ totalCaisse | number:'1.0-0' }} F</div>
         </div>
-
       </div>
     </div>
 

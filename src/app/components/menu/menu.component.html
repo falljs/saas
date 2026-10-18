@@ -34,6 +34,13 @@
 
   <div class="topbar-right">
 
+    <!-- CHANGER DE MAGASIN (visible seulement si connecté via la porte d'entrée) -->
+    <a *ngIf="viaGateway" class="switch-store-btn" [href]="urlGateway" aria-label="Changer de magasin"
+      title="Changer de magasin">
+      <i class="fa fa-exchange"></i>
+      <span class="switch-store-btn__label">Changer de magasin</span>
+    </a>
+
     <!-- ACTIONS RAPIDES -->
     <div class="nav-item dropdown quick-action" *ngIf="hasAnyQuickAction()">
 
