@@ -292,8 +292,10 @@
           <i class="fa fa-list"></i>
           Encaissement
         </a>
-        <a *ngIf="parametreService.isModuleActive('vente.remboursement')" routerLink="/remboursements"
+
+        <a *ngIf="parametreService.isModuleActive('vente.remboursement') && isTenantBaye" routerLink="/remboursements"
           routerLinkActive="active" class="submenu-link">
+
           <i class="fa fa-list"></i>
           Remboursements
         </a>

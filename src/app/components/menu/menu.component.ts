@@ -120,6 +120,10 @@ export class MenuComponent implements OnInit, OnDestroy {
     this.openCurrentMenu();
   }
 
+  get isTenantBaye(): boolean {
+    return window.location.hostname.split('.')[0] === 'bayendiayeco';
+  }
+
   openAction(action: { modal?: string }): void {
     if (action.modal === 'produit') {
       this.produitModal.open();
@@ -373,4 +377,5 @@ export class MenuComponent implements OnInit, OnDestroy {
     return this.parametreService.hasAnyModuleActive(['crm', 'crm.client', 'crm.fournisseur'])
       && this.userService.checkPermissionExistence(this.firstRoleName + ' avoir accès CRM');
   }
+
 }
