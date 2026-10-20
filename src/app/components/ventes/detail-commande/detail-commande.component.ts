@@ -16,6 +16,7 @@ import { HttpClient } from '@angular/common/http';
 (pdfMake as any).vfs = pdfFonts.pdfMake.vfs;
 import { environment } from 'src/environments/environment';
 import Swal from 'sweetalert2';
+import { LivreurService } from 'src/app/services/livreur.service';
 declare const bootstrap: any;
 
 @Component({
@@ -45,6 +46,9 @@ export class DetailCommandeComponent implements OnInit {
         this.keyEnter = null;
         this.onSubmitReglement();
       }
+    }
+    if (target?.id === 'livreurSelect') {
+      return;
     }
   }
 
@@ -162,11 +166,20 @@ export class DetailCommandeComponent implements OnInit {
     this.saveNote();
   }
 
+  // ------------------------------------------------------------------
+  // LIVREUR
+  // ------------------------------------------------------------------
+  parametre: any = null;
+  listLivreurs: any[] = [];
+  livreurChoisiId: number | null = null;
+  livreurSaving: boolean = false;
+
   constructor(public router: Router, public fb: FormBuilder, public reglementService: LigneReglementService,
     public ligneCommandeService: LigneCommandeService, public commandeService: CommandeService,
     public userService: UserService, public ligneRegelementService: LigneReglementService,
     public toastrService: ToastrService, public parametreService: ParametreService,
-    public clientService: ClientService, private http: HttpClient, private paymentLinkService: PaymentLinkService) { }
+    public clientService: ClientService, private http: HttpClient, private paymentLinkService: PaymentLinkService,
+    public livreurService: LivreurService) { }
 
   get fReglement() { return this.formReglement.controls }
   get fReduction() { return this.formReduction.controls }
@@ -194,6 +207,7 @@ export class DetailCommandeComponent implements OnInit {
 
       this.totttc = this.commande.totttc;
       this.noteText = this.commande.note || '';   // NOUVEAU
+      this.livreurChoisiId = this.commande.livreur_id ?? null;
       this.getSetting();
       this.getCommClient();
       this.refreshRoleAndPermissonsUser();
@@ -203,6 +217,66 @@ export class DetailCommandeComponent implements OnInit {
         this.firstRoleName = this.userService.user.roles[0].name;
       }
     }
+  }
+
+  isLivraisonActive(): boolean {
+    return Number(this.parametre?.livraison_active) === 1;
+  }
+
+  /** Même permission que la modification d'une facture */
+  get canAssignLivreur(): boolean {
+    return this.userService.checkPermissionExistence(this.firstRoleName + ' modifier facture et devis Vente');
+  }
+
+  /** Livreurs actifs, plus le livreur actuel s'il est devenu inactif ou supprimé */
+  get livreursProposes(): any[] {
+    const actuel = this.commande?.livreur;
+    if (actuel && !this.listLivreurs.some(l => l.id === actuel.id)) {
+      return [actuel, ...this.listLivreurs];
+    }
+    return this.listLivreurs;
+  }
+
+  get livreurChanged(): boolean {
+    return (this.livreurChoisiId ?? null) !== (this.commande?.livreur_id ?? null);
+  }
+
+  getLivreurs(): void {
+    this.livreurService.getAll(true).subscribe({
+      next: (data: any) => this.listLivreurs = data,
+      error: (err: any) => console.error('Erreur récupération livreurs :', err)
+    });
+  }
+
+  saveLivreur(): void {
+    if (!this.canAssignLivreur || !this.livreurChanged || this.livreurSaving) return;
+
+    this.livreurSaving = true;
+
+    this.livreurService.assignerCommande(this.commande.id, this.livreurChoisiId).subscribe({
+      next: (resp: any) => {
+        this.livreurSaving = false;
+
+        const maj = resp?.commande;
+        this.commande = {
+          ...this.commande,
+          livreur_id: maj?.livreur_id ?? null,
+          livreur: maj?.livreur ?? null
+        };
+        this.livreurChoisiId = this.commande.livreur_id;
+        localStorage.setItem('commande', JSON.stringify(this.commande));
+
+        this.toastrService.success(
+          this.commande.livreur
+            ? 'Livreur assigné : ' + this.commande.livreur.nom
+            : 'Livreur retiré'
+        );
+      },
+      error: (err: any) => {
+        this.livreurSaving = false;
+        this.toastrService.error(err?.error?.message || "Impossible d'enregistrer le livreur.");
+      }
+    });
   }
 
 
@@ -220,11 +294,25 @@ export class DetailCommandeComponent implements OnInit {
     // NOUVEAU : ne pas écraser une note en cours de saisie (à calculer AVANT de remplacer this.commande)
     const noteEnCoursDeSaisie = this.noteChanged;
 
+    // Juste après le calcul de noteEnCoursDeSaisie (avant de remplacer this.commande)
+    const livreurEnCoursDeChoix = this.livreurChanged;
+
+    // Juste avant this.commande = commande;
+    if (commande && !commande.livreur && commande.livreur_id
+      && this.commande?.livreur?.id === commande.livreur_id) {
+      commande = { ...commande, livreur: this.commande.livreur };
+    }
+
     this.commande = commande;
     if (client) this.client = client;
 
     if (!noteEnCoursDeSaisie) {
       this.noteText = commande?.note || '';
+    }
+
+    // Juste après le bloc if (!noteEnCoursDeSaisie) { ... }
+    if (!livreurEnCoursDeChoix) {
+      this.livreurChoisiId = commande?.livreur_id ?? null;
     }
 
     // Nouvelles références de tableau -> force le re-render Angular
@@ -797,8 +885,13 @@ Merci.`;
   }
 
   getSetting() {
-    this.parametreService.getSetting().subscribe((data) => {
+    this.parametreService.getSetting().subscribe((data: any) => {
       localStorage.setItem('setting', JSON.stringify(data));
+
+      this.parametre = data?.data ?? data?.setting ?? data;
+      if (this.isLivraisonActive()) {
+        this.getLivreurs();
+      }
     });
   }
 
@@ -835,6 +928,7 @@ Merci.`;
 
       this.totttc = this.commande.totttc;
       this.noteText = this.commande.note || '';   // NOUVEAU
+      this.livreurChoisiId = this.commande.livreur_id ?? null;
     });
   }
 

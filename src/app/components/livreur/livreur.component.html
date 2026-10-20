@@ -1,0 +1,153 @@
+<div class="container-fluid">
+    <app-menu-vente></app-menu-vente>
+
+    <div class="card p-2 p-md-3">
+
+        <!-- En-tête : empilé sur mobile, sur une ligne dès md -->
+        <div class="row g-2 align-items-center mb-3">
+            <div class="col-12 col-md">
+                <h3 class="h4 mb-0 text-muted">Gestion des livreurs</h3>
+            </div>
+
+            <div class="col-12 col-md-5 col-lg-4">
+                <input type="text" class="form-control" placeholder="Nom ou téléphone" [(ngModel)]="search"
+                    name="search" />
+            </div>
+
+            <div class="col-12 col-md-auto">
+                <button class="btn btn-primary w-100" (click)="openModal()">
+                    <i class="fa fa-plus me-1"></i> Nouveau livreur
+                </button>
+            </div>
+        </div>
+
+        <!-- ===================== MOBILE : cartes ===================== -->
+        <div class="d-md-none">
+
+            <div *ngIf="filtered.length === 0" class="text-center text-muted py-4">
+                Aucun livreur
+            </div>
+
+            <div class="border rounded p-3 mb-2" *ngFor="let l of filtered">
+
+                <div class="d-flex align-items-start justify-content-between mb-2">
+                    <div class="fw-bold fs-4">{{ l.nom }}</div>
+
+                    <a href="javascript:void(0)" (click)="toggle(l)" class="badge ms-2"
+                        [ngClass]="l.actif ? 'bg-success' : 'bg-secondary'">
+                        {{ l.actif ? 'Actif' : 'Inactif' }}
+                    </a>
+                </div>
+
+                <div class="small mb-1" *ngIf="l.telephone">
+                    <i class="fa fa-phone me-1 text-muted"></i>
+                    <a [href]="'tel:' + l.telephone">{{ l.telephone }}</a>
+                </div>
+
+                <div class="small mb-1" *ngIf="l.vehicule">
+                    <i class="fa fa-motorcycle me-1 text-muted"></i> {{ l.vehicule }}
+                </div>
+
+                <div class="small mb-1" *ngIf="l.adresse">
+                    <i class="fa fa-map-marker me-1 text-muted"></i> {{ l.adresse }}
+                </div>
+
+                <div class="small text-muted mb-3">
+                    {{ l.commandes_count }} livraison(s)
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-primary flex-fill" (click)="openModal(l)">
+                        <i class="fa fa-edit me-1"></i> Modifier
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger flex-fill" (click)="remove(l)">
+                        <i class="fa fa-trash me-1"></i> Supprimer
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= TABLETTE / ORDINATEUR : tableau ================= -->
+        <div class="d-none d-md-block">
+            <div class="table-responsive">
+                <table class="table table-vcenter text-nowrap">
+                    <thead>
+                        <tr>
+                            <th>Nom</th>
+                            <th>Téléphone</th>
+                            <th>Véhicule</th>
+                            <th>Adresse</th>
+                            <th>Livraisons</th>
+                            <th>Statut</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngIf="filtered.length === 0">
+                            <td colspan="7" class="text-center text-muted">Aucun livreur</td>
+                        </tr>
+
+                        <tr *ngFor="let l of filtered">
+                            <td>{{ l.nom }}</td>
+                            <td>{{ l.telephone }}</td>
+                            <td>{{ l.vehicule }}</td>
+                            <td>{{ l.adresse }}</td>
+                            <td>{{ l.commandes_count }}</td>
+                            <td>
+                                <a href="javascript:void(0)" (click)="toggle(l)" class="badge"
+                                    [ngClass]="l.actif ? 'bg-success' : 'bg-secondary'"
+                                    title="Cliquer pour activer/désactiver">
+                                    {{ l.actif ? 'Actif' : 'Inactif' }}
+                                </a>
+                            </td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-primary mx-1" (click)="openModal(l)"
+                                    title="Modifier">
+                                    <i class="fa fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger mx-1" (click)="remove(l)"
+                                    title="Supprimer">
+                                    <i class="fa fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Modal ajout / modification -->
+<div class="modal modal-blur" id="modalLivreur" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <form [formGroup]="form" (ngSubmit)="save()" autocomplete="off" novalidate>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <div class="modal-status bg-primary"></div>
+                <div class="modal-header">{{ editId ? 'Modifier le livreur' : 'Nouveau livreur' }}</div>
+
+                <div class="modal-body">
+                    <label class="form-label fw-bold">Nom</label>
+                    <input type="text" class="form-control mb-2" formControlName="nom" placeholder="Nom du livreur" />
+
+                    <label class="form-label fw-bold">Téléphone</label>
+                    <input type="tel" inputmode="tel" class="form-control mb-2" formControlName="telephone"
+                        placeholder="221..." />
+
+                    <label class="form-label fw-bold">Véhicule</label>
+                    <input type="text" class="form-control mb-2" formControlName="vehicule"
+                        placeholder="Moto, voiture..." />
+
+                    <label class="form-label fw-bold">Adresse</label>
+                    <input type="text" class="form-control mb-3" formControlName="adresse" />
+
+                    <button type="submit" class="btn btn-primary w-100" [disabled]="form.invalid || isSaving">
+                        {{ editId ? 'Enregistrer' : 'Ajouter' }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

@@ -91,6 +91,7 @@ import { ProduitCreateModalComponent } from './components/produit-create-modal/p
 import { APP_INITIALIZER } from '@angular/core';
 import { centralInitializer, ssoInitializer } from './gateway/gateway.initializers';
 import { RemboursementComponent } from './components/remboursement/remboursement.component';
+import { LivreurComponent } from './components/livreur/livreur.component';
 
 @NgModule({
   declarations: [
@@ -170,7 +171,8 @@ import { RemboursementComponent } from './components/remboursement/remboursement
     ReferralComponent,
     InscriptionComponent,
     ProduitCreateModalComponent,
-    RemboursementComponent
+    RemboursementComponent,
+    LivreurComponent
   ],
   imports: [
     ServiceWorkerModule.register('ngsw-worker.js', {

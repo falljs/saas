@@ -10,6 +10,7 @@ import { LocalStorageService } from 'src/app/services/local-storage.service';
 import { ProduitService } from 'src/app/services/produit.service';
 import { UserService } from 'src/app/services/user.service';
 import { ParametreService } from 'src/app/services/parametre.service';
+import { LivreurService } from 'src/app/services/livreur.service';
 declare var bootstrap: any;
 
 @Component({
@@ -73,9 +74,14 @@ export class EditCommandeComponent implements OnInit {
   parametre: any = null;
   parametreLoaded: boolean = false;
 
+  listLivreurs: any[] = [];
+  selectedLivreur: any = null;
+  searchLivreur = '';
+  showDropdownLivreur = false;
+
   constructor(public produitService: ProduitService, public ligneCommandeService: LigneCommandeService, public localStorageService: LocalStorageService,
     public commandeService: CommandeService, public userService: UserService, public clientService: ClientService, public router: Router,
-    public toastrService: ToastrService, public formBuilder: FormBuilder, public parametreService: ParametreService) { }
+    public toastrService: ToastrService, public formBuilder: FormBuilder, public parametreService: ParametreService, public livreurService: LivreurService) { }
   get fClient() { return this.formClient.controls }
   get fDossier() { return this.formDossier.controls }
   get formUpdateCommande() { return this.fUpdateCommande.controls }
@@ -114,6 +120,8 @@ export class EditCommandeComponent implements OnInit {
       this.auteur = this.userService.name;
       this.totttc = this.commande.totttc;
 
+      this.selectedLivreur = this.commande.livreur ?? null;
+
       let total = 0;
       for (var i = 0; i < this.ligneCommandeService.listLigneCommande.length; i++) {
         if (this.ligneCommandeService.listLigneCommande[i].totht) {
@@ -130,6 +138,10 @@ export class EditCommandeComponent implements OnInit {
       next: (data: any) => {
         this.parametre = data?.setting ?? data;
         this.parametreLoaded = true;
+
+        if (this.isLivraisonActive()) {
+          this.getLivreurs();
+        }
 
         console.log('Paramètres tenant :', this.parametre);
         console.log('Emprunt produit actif :', this.isEmpruntProduitActive());
@@ -152,6 +164,30 @@ export class EditCommandeComponent implements OnInit {
     const pas = Number(this.parametre?.pas_vente);
 
     return pas > 0 ? pas : 1;
+  }
+
+  isLivraisonActive(): boolean {
+    return Number(this.parametre?.livraison_active) === 1;
+  }
+
+  getLivreurs(): void {
+    this.livreurService.getAll(true).subscribe({
+      next: (data: any) => this.listLivreurs = data,
+      error: (err) => console.error('Erreur récupération livreurs :', err)
+    });
+  }
+
+  get filteredLivreurs() {
+    const s = this.searchLivreur.toLowerCase();
+    return this.listLivreurs.filter(l =>
+      l.nom.toLowerCase().includes(s) || (l.telephone ?? '').includes(s)
+    );
+  }
+
+  selectLivreur(livreur: any | null) {
+    this.selectedLivreur = livreur;
+    this.searchLivreur = '';
+    this.showDropdownLivreur = false;
   }
 
   get filteredClient() {
@@ -192,6 +228,7 @@ export class EditCommandeComponent implements OnInit {
       totht: 0,
       tottva: 0,
       totttc: 0,
+      livreur_id: null,
       ligneCommande: [],
     });
   }
@@ -209,6 +246,7 @@ export class EditCommandeComponent implements OnInit {
     this.formUpdateCommande['net'].setValue(this.net);
     this.formUpdateCommande['tottva'].setValue(this.tottva);
     this.formUpdateCommande['totttc'].setValue(this.totttc);
+    this.formUpdateCommande['livreur_id'].setValue(this.selectedLivreur?.id ?? null);
     if (this.commande.versement != 0) {
       this.formUpdateCommande['restant'].setValue(this.restant);
     } else {
@@ -741,7 +779,15 @@ export class EditCommandeComponent implements OnInit {
     if (this.clientAutre) {
       this.formUpdateCommande['nom_client'].setValue(this.clientAutre);
     }
-    this.commandeService.update(this.fUpdateCommande.value).subscribe({
+    const payload = { ...this.fUpdateCommande.value };
+
+    // Si la livraison n'est pas active (ou paramètres non chargés), on n'envoie pas
+    // le champ : le livreur déjà lié à la commande n'est donc jamais effacé par erreur.
+    if (!this.isLivraisonActive()) {
+      delete payload.livreur_id;
+    }
+
+    this.commandeService.update(payload).subscribe({
       next: (data: any) => {
         const resp: any = data;
         this.toastrService.success('Commande numero ' + resp.commande.numero + ' mise à jour !');

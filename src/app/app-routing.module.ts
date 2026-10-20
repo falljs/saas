@@ -69,6 +69,7 @@ import { InscriptionComponent } from './components/inscription/inscription.compo
 import { GatewayLoginComponent } from './gateway/gateway-login.component';
 import { GatewayMagasinsComponent } from './gateway/gateway-magasins.component';
 import { gatewayGuard } from './gateway/gateway.guard';
+import { LivreurComponent } from './components/livreur/livreur.component';
 
 const appRroutes: Routes = [
   {
@@ -159,6 +160,8 @@ const appRroutes: Routes = [
         path: 'parrainage',
         component: ReferralComponent
       },
+
+      { path: 'livreurs', component: LivreurComponent }
 
     ]
   },

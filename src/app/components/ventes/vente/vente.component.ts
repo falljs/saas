@@ -16,6 +16,7 @@ import { LocalStorageService } from 'src/app/services/local-storage.service';
 import { ProduitService } from 'src/app/services/produit.service';
 import { UserService } from 'src/app/services/user.service';
 import { ParametreService } from 'src/app/services/parametre.service';
+import { LivreurService } from 'src/app/services/livreur.service';
 declare var bootstrap: any;
 
 @Component({
@@ -103,6 +104,11 @@ export class VenteComponent implements OnInit, OnDestroy {
   searchFamilleValue: string = '';
   searchReferenceValue: string = '';
 
+  listLivreurs: any[] = [];
+  selectedLivreur: any = null;
+  searchLivreur = '';
+  showDropdownLivreur = false;
+
   constructor(
     public produitService: ProduitService,
     public ligneCommandeService: LigneCommandeService,
@@ -115,7 +121,8 @@ export class VenteComponent implements OnInit, OnDestroy {
     public formBuilder: FormBuilder,
     public router: Router,
     public localStorageService: LocalStorageService,
-    public parametreService: ParametreService
+    public parametreService: ParametreService,
+    public livreurService: LivreurService
   ) { }
 
   get filteredProduits(): any[] {
@@ -307,6 +314,8 @@ export class VenteComponent implements OnInit, OnDestroy {
           data;
 
         this.parametreLoaded = true;
+
+        if (this.isLivraisonActive()) { this.getLivreurs(); }
       },
 
       error: (err) => {
@@ -426,6 +435,7 @@ export class VenteComponent implements OnInit, OnDestroy {
         totttc: 0,
         isCommande: '',
         ligneCommande: [],
+        livreur_id: null,
       });
   }
 
@@ -474,6 +484,8 @@ export class VenteComponent implements OnInit, OnDestroy {
       .setValue(
         this.ligneCommandeService.listLigneCommande
       );
+
+    this.fCommande['livreur_id'].setValue(this.selectedLivreur?.id ?? null);
   }
 
   initFormClient() {
@@ -1984,6 +1996,30 @@ export class VenteComponent implements OnInit, OnDestroy {
 
       this.deleteLigneCommande(produit.code);
     }
+  }
+
+  isLivraisonActive(): boolean {
+    return Number(this.parametre?.livraison_active) === 1;
+  }
+
+  getLivreurs(): void {
+    this.livreurService.getAll(true).subscribe({
+      next: (data: any) => this.listLivreurs = data,
+      error: (err) => console.error('Erreur récupération livreurs :', err)
+    });
+  }
+
+  get filteredLivreurs() {
+    const s = this.searchLivreur.toLowerCase();
+    return this.listLivreurs.filter(l =>
+      l.nom.toLowerCase().includes(s) || (l.telephone ?? '').includes(s)
+    );
+  }
+
+  selectLivreur(livreur: any | null) {
+    this.selectedLivreur = livreur;
+    this.searchLivreur = '';
+    this.showDropdownLivreur = false;
   }
 
 }

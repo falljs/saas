@@ -57,6 +57,30 @@
                 </div>
             </div>
 
+            <div class="col-md-3" *ngIf="parametreLoaded && isLivraisonActive()">
+                <div class="mb-1">
+                    <label style="font-weight: 600;" class="form-label">Livreur</label>
+                    <div class="seach-clients">
+                        <div class="form-select selected" (click)="showDropdownLivreur = !showDropdownLivreur">
+                            <span *ngIf="selectedLivreur; else aucunLivreur">{{ selectedLivreur.nom }}</span>
+                            <ng-template #aucunLivreur><span class="text-muted">Aucun livreur</span></ng-template>
+                        </div>
+
+                        <div class="form-select showlists" *ngIf="showDropdownLivreur">
+                            <input type="text" [(ngModel)]="searchLivreur" placeholder="Rechercher..." />
+
+                            <div class="showlists-item" (click)="selectLivreur(null)">
+                                <span>Aucun livreur</span>
+                            </div>
+                            <div class="showlists-item" *ngFor="let l of filteredLivreurs" (click)="selectLivreur(l)">
+                                <span>{{ l.nom }}</span>
+                                <small class="text-muted ms-2">{{ l.telephone }}</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="col-md" *ngIf="isSelect">
                 <div class="mb-1">
                     <label for="basic-url" style="font-weight: 600;" class="form-label">Saisir le nom du client</label>
