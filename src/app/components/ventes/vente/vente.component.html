@@ -25,9 +25,13 @@
             <div class="col-md">
                 <div class="mb-1">
                     <label for="basic-url" style="font-weight: 600;" class="form-label">Client</label>
-                    <div class="input-group">
+                    <div class="input-group flex-nowrap align-items-start">
                         <button (click)="openClient()" data-bs-toggle="modal" data-bs-target="#modalClient"
-                            class="btn mx-1"><i class="fa fa-plus"></i></button>
+                            type="button" class="btn btn-outline-secondary flex-shrink-0 me-1"
+                            title="Ajouter un client">
+                            <i class="fa fa-plus"></i>
+                        </button>
+
                         <div class="seach-clients">
                             <div class="form-select selected" (click)="showDropdown = !showDropdown">
                                 <ng-container *ngIf="selectedClient; else placeholder">

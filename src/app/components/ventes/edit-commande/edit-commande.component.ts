@@ -134,30 +134,48 @@ export class EditCommandeComponent implements OnInit {
   }
 
   getParametre(): void {
+    this.parametreLoaded = false;
+
     this.parametreService.getSetting().subscribe({
       next: (data: any) => {
-        this.parametre = data?.setting ?? data;
+        this.parametre = data?.data ?? data?.setting ?? data;
         this.parametreLoaded = true;
 
         if (this.isLivraisonActive()) {
           this.getLivreurs();
         }
-
-        console.log('Paramètres tenant :', this.parametre);
-        console.log('Emprunt produit actif :', this.isEmpruntProduitActive());
-        console.log('Pas de vente :', this.getPasVente());
       },
       error: (error) => {
         console.error('Erreur récupération paramètres :', error);
 
+        // Sécurité : emprunt désactivé par défaut
         this.parametre = null;
-        this.parametreLoaded = false;
+        this.parametreLoaded = true;
       }
     });
   }
 
   isEmpruntProduitActive(): boolean {
     return Number(this.parametre?.emprunt_produit_active) === 1;
+  }
+
+  /**
+ * Un produit est sélectionnable si :
+ * - paramètres pas encore chargés : seulement s'il a du stock
+ * - sinon : s'il a du stock OU si l'emprunt est actif
+ */
+  isProduitSelectable(produit: any): boolean {
+    if (!produit) {
+      return false;
+    }
+
+    if (!this.parametreLoaded) {
+      return Number(produit.qty) > 0;
+    }
+
+    const stock = Number(produit.qty) || 0;
+
+    return this.isEmpruntProduitActive() || stock > 0;
   }
 
   getPasVente(): number {
@@ -332,12 +350,63 @@ export class EditCommandeComponent implements OnInit {
     this.typeVente = selectedValue;
   }
 
-  onchangeGros(produit: any) {
-    // push vers Ligne Commande choix
+  /**
+ * Vérifie si le produit peut être ajouté.
+ * @returns true  => on peut ajouter la ligne
+ *          false => on s'arrête (toast d'erreur ou modal ouvert)
+ */
+  private verifierStockEmprunt(produit: any, confirme: boolean = false): boolean {
+
+    const stock = Number(produit.qty) || 0;
+
+    // Stock disponible : OK
+    if (stock > 0) {
+      return true;
+    }
+
+    // Rupture + emprunt désactivé : refus
+    if (!this.isEmpruntProduitActive()) {
+      produit.isselected = false;
+
+      this.toastrService.error(
+        'Stock insuffisant : l\'emprunt de produit est désactivé.'
+      );
+
+      return false;
+    }
+
+    // Rupture + emprunt actif + déjà confirmé : OK
+    if (confirme) {
+      return true;
+    }
+
+    // Rupture + emprunt actif + pas encore confirmé : on ouvre le modal
+    localStorage.removeItem('produit');
+    localStorage.setItem('produit', JSON.stringify(produit));
+
+    // La checkbox sera recochée après confirmation dans submitAlert()
+    produit.isselected = false;
+
+    const modalElement = document.getElementById('modalAlertLine');
+
+    if (modalElement) {
+      const modal = new bootstrap.Modal(modalElement);
+      modal.show();
+    }
+
+    return false;
+  }
+
+  onchangeGros(produit: any, confirme: boolean = false) {
     if (produit.isselected == true) {
+
+      if (!this.verifierStockEmprunt(produit, confirme)) {
+        return;
+      }
+
       this.ligneCommande.codeProduit = produit.code;
       this.ligneCommande.produit = produit.designation;
-      this.ligneCommande.qtyProduit = produit.qty;
+      this.ligneCommande.qtyProduit = Number(produit.qty) || 0;
       this.ligneCommande.qty = this.getPasVente();
       this.ligneCommande.prix = produit.prix_gros;
       this.ligneCommande.prixMin = Number(produit.prix_gros) || 0;
@@ -345,7 +414,7 @@ export class EditCommandeComponent implements OnInit {
       this.ligneCommande.totht = this.ligneCommande.qty * this.ligneCommande.prix;
       this.ligneCommande.auteur = this.userService.name;
       this.ligneCommandeService.listLigneCommande.push(this.ligneCommande);
-      localStorage.removeItem('listLigneCommande')
+      localStorage.removeItem('listLigneCommande');
       localStorage.setItem('listLigneCommande', JSON.stringify(this.ligneCommandeService.listLigneCommande));
       this.nbrProduit = this.ligneCommandeService.listLigneCommande.length;
       this.ligneCommande = new LigneCommande();
@@ -355,12 +424,16 @@ export class EditCommandeComponent implements OnInit {
     }
   }
 
-  onchangeDouzaine(produit: any) {
-    // push vers Ligne Commande choix
+  onchangeDouzaine(produit: any, confirme: boolean = false) {
     if (produit.isselected == true) {
+
+      if (!this.verifierStockEmprunt(produit, confirme)) {
+        return;
+      }
+
       this.ligneCommande.codeProduit = produit.code;
       this.ligneCommande.produit = produit.designation;
-      this.ligneCommande.qtyProduit = produit.qty;
+      this.ligneCommande.qtyProduit = Number(produit.qty) || 0;
       this.ligneCommande.qty = this.getPasVente();
       this.ligneCommande.prix = produit.prix_douzaine;
       this.ligneCommande.prixMin = Number(produit.prix_douzaine) || 0;
@@ -368,7 +441,7 @@ export class EditCommandeComponent implements OnInit {
       this.ligneCommande.totht = this.ligneCommande.qty * this.ligneCommande.prix;
       this.ligneCommande.auteur = this.userService.name;
       this.ligneCommandeService.listLigneCommande.push(this.ligneCommande);
-      localStorage.removeItem('listLigneCommande')
+      localStorage.removeItem('listLigneCommande');
       localStorage.setItem('listLigneCommande', JSON.stringify(this.ligneCommandeService.listLigneCommande));
       this.nbrProduit = this.ligneCommandeService.listLigneCommande.length;
       this.ligneCommande = new LigneCommande();
@@ -378,12 +451,16 @@ export class EditCommandeComponent implements OnInit {
     }
   }
 
-  onchangeCarton(produit: any) {
-    // push vers Ligne Commande choix
+  onchangeCarton(produit: any, confirme: boolean = false) {
     if (produit.isselected == true) {
+
+      if (!this.verifierStockEmprunt(produit, confirme)) {
+        return;
+      }
+
       this.ligneCommande.codeProduit = produit.code;
       this.ligneCommande.produit = produit.designation;
-      this.ligneCommande.qtyProduit = produit.qty;
+      this.ligneCommande.qtyProduit = Number(produit.qty) || 0;
       this.ligneCommande.qty = this.getPasVente();
       this.ligneCommande.prix = produit.prix_carton;
       this.ligneCommande.prixMin = Number(produit.prix_carton) || 0;
@@ -391,7 +468,7 @@ export class EditCommandeComponent implements OnInit {
       this.ligneCommande.totht = this.ligneCommande.qty * this.ligneCommande.prix;
       this.ligneCommande.auteur = this.userService.name;
       this.ligneCommandeService.listLigneCommande.push(this.ligneCommande);
-      localStorage.removeItem('listLigneCommande')
+      localStorage.removeItem('listLigneCommande');
       localStorage.setItem('listLigneCommande', JSON.stringify(this.ligneCommandeService.listLigneCommande));
       this.nbrProduit = this.ligneCommandeService.listLigneCommande.length;
       this.ligneCommande = new LigneCommande();
@@ -401,13 +478,17 @@ export class EditCommandeComponent implements OnInit {
     }
   }
 
-  onchange(produit: any) {
-    // push vers Ligne Commande choix
+  onchange(produit: any, confirme: boolean = false) {
     if (produit.isselected == true) {
+
+      if (!this.verifierStockEmprunt(produit, confirme)) {
+        return;
+      }
+
       this.ligneCommande.commande = 0;
       this.ligneCommande.codeProduit = produit.code;
       this.ligneCommande.produit = produit.designation;
-      this.ligneCommande.qtyProduit = produit.qty;
+      this.ligneCommande.qtyProduit = Number(produit.qty) || 0;
       this.ligneCommande.qty = this.getPasVente();
       this.ligneCommande.prix = produit.prix;
       this.ligneCommande.prixMin = Number(produit.prix) || 0;
@@ -415,7 +496,7 @@ export class EditCommandeComponent implements OnInit {
       this.ligneCommande.totht = this.ligneCommande.qty * this.ligneCommande.prix;
       this.ligneCommande.auteur = this.userService.name;
       this.ligneCommandeService.listLigneCommande.push(this.ligneCommande);
-      localStorage.removeItem('listLigneCommande')
+      localStorage.removeItem('listLigneCommande');
       localStorage.setItem('listLigneCommande', JSON.stringify(this.ligneCommandeService.listLigneCommande));
       this.nbrProduit = this.ligneCommandeService.listLigneCommande.length;
       this.ligneCommande = new LigneCommande();
@@ -425,68 +506,39 @@ export class EditCommandeComponent implements OnInit {
     }
   }
 
-  onchangeGrosAlert(produit: any) {
-    // push vers Ligne Commande choix
-    if (produit.isselected) {
-      // Ouvre le modal manuellement seulement si le produit n'est pas sélectionné
-      const modal = new bootstrap.Modal(document.getElementById('modalAlertLine'));
-      modal.show();
-      localStorage.removeItem('produit');
-      localStorage.setItem('produit', JSON.stringify(produit));
-    } else {
-      this.deleteLigneCommande(produit.code);
-    }
-  }
-
-  onchangeDouzaineAlert(produit: any) {
-    // push vers Ligne Commande choix
-    if (produit.isselected) {
-      // Ouvre le modal manuellement seulement si le produit n'est pas sélectionné
-      const modal = new bootstrap.Modal(document.getElementById('modalAlertLine'));
-      modal.show();
-      localStorage.removeItem('produit');
-      localStorage.setItem('produit', JSON.stringify(produit));
-    } else {
-      this.deleteLigneCommande(produit.code);
-    }
-  }
-
-  onchangeCartonAlert(produit: any) {
-    // push vers Ligne Commande choix
-    if (produit.isselected) {
-      // Ouvre le modal manuellement seulement si le produit n'est pas sélectionné
-      const modal = new bootstrap.Modal(document.getElementById('modalAlertLine'));
-      modal.show();
-      localStorage.removeItem('produit');
-      localStorage.setItem('produit', JSON.stringify(produit));
-    } else {
-      this.deleteLigneCommande(produit.code);
-    }
-  }
-
-  onchangeAlert(produit: any) {
-    // push vers Ligne Commande choix
-    if (produit.isselected) {
-      // Ouvre le modal manuellement seulement si le produit n'est pas sélectionné
-      const modal = new bootstrap.Modal(document.getElementById('modalAlertLine'));
-      modal.show();
-      localStorage.removeItem('produit');
-      localStorage.setItem('produit', JSON.stringify(produit));
-    } else {
-      this.deleteLigneCommande(produit.code);
-    }
-  }
-
   submitAlert() {
-    if (localStorage.getItem('produit') != null) {
-      let produit: any = JSON.parse(localStorage.getItem('produit')!);
-      if (this.typeVente == 'detail') {
-        this.onchange(produit);
-      } else {
-        this.onchangeGros(produit);
-      }
-      localStorage.removeItem('produit');
-    };
+    const storedProduit = localStorage.getItem('produit');
+
+    if (!storedProduit) {
+      return;
+    }
+
+    const produit: any = JSON.parse(storedProduit);
+
+    // Le produit est confirmé : on le coche
+    produit.isselected = true;
+
+    // On coche aussi l'objet réel de la liste affichée
+    const produitListe = this.produitService.listProduits.find(
+      (p: any) => p.code === produit.code
+    );
+
+    if (produitListe) {
+      produitListe.isselected = true;
+    }
+
+    // confirme = true : on ne rouvre pas le modal
+    if (this.typeVente === 'detail') {
+      this.onchange(produit, true);
+    } else if (this.typeVente === 'gros') {
+      this.onchangeGros(produit, true);
+    } else if (this.typeVente === 'douzaine') {
+      this.onchangeDouzaine(produit, true);
+    } else if (this.typeVente === 'carton') {
+      this.onchangeCarton(produit, true);
+    }
+
+    localStorage.removeItem('produit');
   }
 
   cancelAlert() {

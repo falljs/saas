@@ -1,5 +1,7 @@
 .seach-clients {
-  width: 90%;
+  flex: 1 1 auto; // prend toute la place restante à côté du bouton
+  width: 100%; // au lieu de 90% (utile aussi pour le bloc Livreur)
+  min-width: 0; // indispensable pour que le flex item puisse rétrécir
   position: relative;
   font-family: Arial, sans-serif;
 }
@@ -11,6 +13,12 @@
   align-items: center;
   justify-content: space-between;
   cursor: pointer;
+
+  span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap; // les noms longs sont coupés avec "…" au lieu de casser la mise en page
+  }
 }
 
 .showlists {
